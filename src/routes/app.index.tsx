@@ -95,7 +95,7 @@ function Dashboard() {
               <li key={r}>
                 <Link
                   to="/app/search"
-                  search={{ q: r }}
+                 
                   className="block rounded-lg border bg-background/60 px-3 py-2 text-sm hover:bg-accent/10"
                 >
                   {r}
@@ -111,7 +111,7 @@ function Dashboard() {
           <h2 className="text-lg font-semibold">Popular Topics</h2>
           <div className="mt-4 flex flex-wrap gap-2">
             {trendingTopics.map((t) => (
-              <Link key={t} to="/app/search" search={{ q: t }}>
+              <Link key={t} to="/app/search">
                 <Badge variant="secondary" className="cursor-pointer rounded-full px-3 py-1 text-xs hover:bg-accent/20">
                   {t}
                 </Badge>
