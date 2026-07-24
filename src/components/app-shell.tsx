@@ -21,7 +21,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/app/search", label: "AI Search", icon: Search },
   { to: "/app/library", label: "Document Library", icon: FolderOpen },
@@ -32,7 +39,7 @@ const nav = [
   { to: "/app/voice", label: "Voice Search", icon: Mic },
   { to: "/app/saved", label: "Saved Responses", icon: Star },
   { to: "/app/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
