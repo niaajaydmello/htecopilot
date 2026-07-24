@@ -9,10 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWorkflowRouteImport } from './routes/app.workflow'
+import { Route as AppVoiceRouteImport } from './routes/app.voice'
+import { Route as AppTimelineRouteImport } from './routes/app.timeline'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppSearchRouteImport } from './routes/app.search'
+import { Route as AppSavedRouteImport } from './routes/app.saved'
+import { Route as AppLibraryRouteImport } from './routes/app.library'
+import { Route as AppCompareRouteImport } from './routes/app.compare'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -28,37 +43,159 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkflowRoute = AppWorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVoiceRoute = AppVoiceRouteImport.update({
+  id: '/voice',
+  path: '/voice',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimelineRoute = AppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSavedRoute = AppSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLibraryRoute = AppLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCompareRoute = AppCompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/compare': typeof AppCompareRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/saved': typeof AppSavedRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/timeline': typeof AppTimelineRoute
+  '/app/voice': typeof AppVoiceRoute
+  '/app/workflow': typeof AppWorkflowRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/compare': typeof AppCompareRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/saved': typeof AppSavedRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/timeline': typeof AppTimelineRoute
+  '/app/voice': typeof AppVoiceRoute
+  '/app/workflow': typeof AppWorkflowRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/compare': typeof AppCompareRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/saved': typeof AppSavedRoute
+  '/app/search': typeof AppSearchRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/timeline': typeof AppTimelineRoute
+  '/app/voice': typeof AppVoiceRoute
+  '/app/workflow': typeof AppWorkflowRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/analytics'
+    | '/app/compare'
+    | '/app/library'
+    | '/app/saved'
+    | '/app/search'
+    | '/app/settings'
+    | '/app/timeline'
+    | '/app/voice'
+    | '/app/workflow'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app'
-  id: '__root__' | '/' | '/app' | '/app/'
+  to:
+    | '/'
+    | '/auth'
+    | '/app/analytics'
+    | '/app/compare'
+    | '/app/library'
+    | '/app/saved'
+    | '/app/search'
+    | '/app/settings'
+    | '/app/timeline'
+    | '/app/voice'
+    | '/app/workflow'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/analytics'
+    | '/app/compare'
+    | '/app/library'
+    | '/app/saved'
+    | '/app/search'
+    | '/app/settings'
+    | '/app/timeline'
+    | '/app/voice'
+    | '/app/workflow'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -80,14 +217,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workflow': {
+      id: '/app/workflow'
+      path: '/workflow'
+      fullPath: '/app/workflow'
+      preLoaderRoute: typeof AppWorkflowRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/voice': {
+      id: '/app/voice'
+      path: '/voice'
+      fullPath: '/app/voice'
+      preLoaderRoute: typeof AppVoiceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/timeline': {
+      id: '/app/timeline'
+      path: '/timeline'
+      fullPath: '/app/timeline'
+      preLoaderRoute: typeof AppTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/search': {
+      id: '/app/search'
+      path: '/search'
+      fullPath: '/app/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/saved': {
+      id: '/app/saved'
+      path: '/saved'
+      fullPath: '/app/saved'
+      preLoaderRoute: typeof AppSavedRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/library': {
+      id: '/app/library'
+      path: '/library'
+      fullPath: '/app/library'
+      preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/compare': {
+      id: '/app/compare'
+      path: '/compare'
+      fullPath: '/app/compare'
+      preLoaderRoute: typeof AppCompareRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppCompareRoute: typeof AppCompareRoute
+  AppLibraryRoute: typeof AppLibraryRoute
+  AppSavedRoute: typeof AppSavedRoute
+  AppSearchRoute: typeof AppSearchRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppTimelineRoute: typeof AppTimelineRoute
+  AppVoiceRoute: typeof AppVoiceRoute
+  AppWorkflowRoute: typeof AppWorkflowRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppCompareRoute: AppCompareRoute,
+  AppLibraryRoute: AppLibraryRoute,
+  AppSavedRoute: AppSavedRoute,
+  AppSearchRoute: AppSearchRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppTimelineRoute: AppTimelineRoute,
+  AppVoiceRoute: AppVoiceRoute,
+  AppWorkflowRoute: AppWorkflowRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -96,6 +314,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
