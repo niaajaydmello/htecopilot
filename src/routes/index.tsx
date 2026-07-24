@@ -25,11 +25,11 @@ export const Route = createFileRoute("/")({
         content:
           "Enterprise-grade AI copilot for Maharashtra HTE: semantic search, cited answers, document comparison and workflow generation across every GR, circular and policy.",
       },
-      { property: "og:title", content: "HTE AI Copilot" },
+      { property: "og:title", content: "HTE AI Copilot — AI for Higher & Technical Education" },
       {
         property: "og:description",
         content:
-          "Instant, reliable access to administrative knowledge — cited, comparable, explainable.",
+          "Enterprise-grade AI copilot for Maharashtra HTE: semantic search, cited answers, document comparison and workflow generation across every GR, circular and policy.",
       },
     ],
   }),
