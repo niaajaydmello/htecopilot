@@ -1,34 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   Search,
   Sparkles,
-  ShieldCheck,
-  FileText,
   Mic,
   Send,
   BookmarkPlus,
-  Languages,
-  GraduationCap,
-  Users,
-  ListChecks,
-  ExternalLink,
   Copy,
   ChevronRight,
+  FileText,
+  ExternalLink,
+  GraduationCap,
+  Database,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import {
-  exampleQueries,
-  generateAnswer,
-  suggestedQuestions,
-  type GroundedAnswer,
-} from "@/lib/hte-data";
+import { exampleQueries, suggestedQuestions } from "@/lib/hte-data";
+import { ragSearch, listIngestedDocuments } from "@/lib/rag.functions";
 
 const searchSchema = z.object({ q: z.string().optional() });
 
@@ -37,34 +31,60 @@ export const Route = createFileRoute("/app/search")({
   head: () => ({
     meta: [
       { title: "AI Search · HTE Copilot" },
-      { name: "description", content: "Ask anything about Higher & Technical Education." },
+      { name: "description", content: "Ask anything grounded on your ingested HTE documents." },
     ],
   }),
   component: SearchPage,
 });
 
+type SearchResult = Awaited<ReturnType<typeof ragSearch>>;
+
 function SearchPage() {
   const { q } = Route.useSearch();
   const [query, setQuery] = useState(q ?? "");
-  const [answer, setAnswer] = useState<GroundedAnswer | null>(null);
+  const [askedQuery, setAskedQuery] = useState<string>("");
+  const [answer, setAnswer] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const ask = (text: string) => {
+  const runRag = useServerFn(ragSearch);
+  const listDocs = useServerFn(listIngestedDocuments);
+  const { data: docs } = useQuery({
+    queryKey: ["ingested-docs"],
+    queryFn: () => listDocs(),
+  });
+
+  const ask = async (text: string) => {
     if (!text.trim()) return;
     setLoading(true);
     setAnswer(null);
+    setAskedQuery(text);
     setQuery(text);
-    setTimeout(() => {
-      setAnswer(generateAnswer(text));
+    try {
+      const res = await runRag({ data: { query: text } });
+      setAnswer(res);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Search failed");
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
+
+  const docCount = docs?.length ?? 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      {!answer && !loading && <Hero onAsk={ask} query={query} setQuery={setQuery} />}
-      {loading && <Loading query={query} />}
-      {answer && <AnswerPanel a={answer} onAsk={ask} onReset={() => setAnswer(null)} />}
+      {!answer && !loading && (
+        <Hero onAsk={ask} query={query} setQuery={setQuery} docCount={docCount} />
+      )}
+      {loading && <Loading query={askedQuery} docCount={docCount} />}
+      {answer && (
+        <AnswerPanel
+          query={askedQuery}
+          a={answer}
+          onAsk={ask}
+          onReset={() => setAnswer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -73,22 +93,27 @@ function Hero({
   onAsk,
   query,
   setQuery,
+  docCount,
 }: {
   onAsk: (q: string) => void;
   query: string;
   setQuery: (v: string) => void;
+  docCount: number;
 }) {
   return (
     <div className="space-y-8 py-6">
       <div className="text-center">
         <Badge variant="secondary" className="rounded-full px-3 py-1">
-          <Sparkles className="mr-1.5 h-3 w-3 text-accent" /> Grounded on official HTE documents
+          <Sparkles className="mr-1.5 h-3 w-3 text-accent" />
+          {docCount > 0
+            ? `Grounded on ${docCount} ingested document${docCount === 1 ? "" : "s"}`
+            : "Upload documents in the Library to start"}
         </Badge>
         <h1 className="mt-4 text-4xl font-bold">
           Ask anything about <span className="gradient-text">Higher Technical Education</span>
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Cited answers, side-by-side sources, comparable across years.
+          Answers with inline citations from your ingested corpus.
         </p>
       </div>
 
@@ -97,7 +122,7 @@ function Hero({
           <Textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask anything about Higher Technical Education…"
+            placeholder="Ask a question about your uploaded HTE documents…"
             rows={3}
             className="resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
             onKeyDown={(e) => {
@@ -109,9 +134,7 @@ function Hero({
               <Mic className="mr-1.5 h-4 w-4" /> Voice
             </Button>
             <div className="ml-auto flex items-center gap-2">
-              <span className="hidden text-xs text-muted-foreground md:inline">
-                ⌘+↵ to send
-              </span>
+              <span className="hidden text-xs text-muted-foreground md:inline">⌘+↵ to send</span>
               <Button onClick={() => onAsk(query)} className="gradient-primary shadow-elevated">
                 <Send className="mr-1.5 h-4 w-4" /> Ask
               </Button>
@@ -119,6 +142,14 @@ function Hero({
           </div>
         </div>
       </div>
+
+      {docCount === 0 && (
+        <div className="rounded-2xl border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">
+          <Database className="mx-auto mb-2 h-5 w-5 text-accent" />
+          No documents ingested yet. Go to <b>Document Library</b> and upload a PDF or text file to
+          give the AI a knowledge base to answer from.
+        </div>
+      )}
 
       <div>
         <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -159,12 +190,12 @@ function Hero({
   );
 }
 
-function Loading({ query }: { query: string }) {
+function Loading({ query, docCount }: { query: string; docCount: number }) {
   return (
     <div className="space-y-4 py-10 text-center">
       <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm shadow-card">
         <Sparkles className="h-4 w-4 animate-pulse text-accent" />
-        Retrieving from 3,942 documents…
+        Retrieving from {docCount} ingested document{docCount === 1 ? "" : "s"}…
       </div>
       <p className="text-lg font-medium">{query}</p>
       <div className="mx-auto max-w-2xl space-y-3">
@@ -177,11 +208,13 @@ function Loading({ query }: { query: string }) {
 }
 
 function AnswerPanel({
+  query,
   a,
   onAsk,
   onReset,
 }: {
-  a: GroundedAnswer;
+  query: string;
+  a: SearchResult;
   onAsk: (q: string) => void;
   onReset: () => void;
 }) {
@@ -190,11 +223,21 @@ function AnswerPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-xs text-muted-foreground">Your question</div>
-          <h1 className="text-2xl font-semibold">{a.query}</h1>
+          <h1 className="text-2xl font-semibold">{query}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onReset}>
             <Search className="mr-1.5 h-4 w-4" /> New search
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(a.answer);
+              toast.success("Answer copied");
+            }}
+          >
+            <Copy className="mr-1.5 h-4 w-4" /> Copy
           </Button>
           <Button variant="outline" size="sm" onClick={() => toast.success("Saved to workspace")}>
             <BookmarkPlus className="mr-1.5 h-4 w-4" /> Save
@@ -206,116 +249,42 @@ function AnswerPanel({
         <div className="space-y-6 lg:col-span-2">
           <section className="rounded-2xl border bg-card p-6 shadow-card">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
-              <Sparkles className="h-3.5 w-3.5" /> Answer summary
+              <Sparkles className="h-3.5 w-3.5" /> AI answer
             </div>
-            <p className="mt-3 text-base leading-relaxed">{a.summary}</p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["Explain simply", "Like a student", "Like a parent", "In Marathi", "5-point summary"].map(
-                (t) => (
-                  <Button key={t} size="sm" variant="secondary" className="rounded-full">
-                    <Languages className="mr-1.5 h-3.5 w-3.5" />
-                    {t}
-                  </Button>
-                ),
-              )}
+            <div className="prose prose-sm mt-3 max-w-none whitespace-pre-wrap text-base leading-relaxed">
+              {a.answer}
             </div>
           </section>
 
-          <Tabs defaultValue="explanation">
-            <TabsList>
-              <TabsTrigger value="explanation">Explanation</TabsTrigger>
-              <TabsTrigger value="eligibility">Eligibility</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="rules">Rules</TabsTrigger>
-              <TabsTrigger value="exceptions">Exceptions</TabsTrigger>
-            </TabsList>
-            <TabsContent value="explanation" className="rounded-2xl border bg-card p-6 shadow-card">
-              <p className="text-sm leading-relaxed">{a.explanation}</p>
-              <div className="mt-4 rounded-lg border bg-warning/10 p-3 text-xs">
-                <div className="font-semibold text-warning-foreground">Important notes</div>
-                <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
-                  {a.notes.map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                </ul>
+          {a.sources.length > 0 && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <h3 className="text-sm font-semibold">Retrieved passages</h3>
+              <div className="mt-3 space-y-3">
+                {a.sources.map((s) => (
+                  <div key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant="secondary">[{s.index}]</Badge>
+                      <Badge variant="outline">{s.type}</Badge>
+                      <span className="truncate">{s.title}</span>
+                      <span className="ml-auto">
+                        sim {Math.round(s.similarity * 100)}%
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-4 text-xs italic text-foreground/80">
+                      &ldquo;{s.excerpt}&rdquo;
+                    </p>
+                  </div>
+                ))}
               </div>
-            </TabsContent>
-            <TabsContent value="eligibility" className="rounded-2xl border bg-card p-6 shadow-card">
-              <ul className="space-y-2 text-sm">
-                {a.eligibility.map((e) => (
-                  <li key={e} className="flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 text-success" /> {e}
-                  </li>
-                ))}
-              </ul>
-            </TabsContent>
-            <TabsContent value="documents" className="rounded-2xl border bg-card p-6 shadow-card">
-              <ul className="space-y-2 text-sm">
-                {a.documents.map((d) => (
-                  <li key={d} className="flex items-start gap-2">
-                    <FileText className="mt-0.5 h-4 w-4 text-accent" /> {d}
-                  </li>
-                ))}
-              </ul>
-            </TabsContent>
-            <TabsContent value="timeline" className="rounded-2xl border bg-card p-6 shadow-card">
-              <ol className="space-y-3">
-                {a.timeline.map((t, i) => (
-                  <li key={t.step} className="flex items-start gap-3">
-                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full gradient-primary text-xs font-semibold text-primary-foreground">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{t.step}</div>
-                      <div className="text-xs text-muted-foreground">{t.duration}</div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </TabsContent>
-            <TabsContent value="rules" className="rounded-2xl border bg-card p-6 shadow-card">
-              <ul className="space-y-2 text-sm">
-                {a.rules.map((r) => (
-                  <li key={r} className="flex items-start gap-2">
-                    <ListChecks className="mt-0.5 h-4 w-4 text-accent" /> {r}
-                  </li>
-                ))}
-              </ul>
-            </TabsContent>
-            <TabsContent value="exceptions" className="rounded-2xl border bg-card p-6 shadow-card">
-              <ul className="space-y-2 text-sm">
-                {a.exceptions.map((e) => (
-                  <li key={e} className="flex items-start gap-2">
-                    <Users className="mt-0.5 h-4 w-4 text-warning" /> {e}
-                  </li>
-                ))}
-              </ul>
-            </TabsContent>
-          </Tabs>
-
-          <section className="rounded-2xl border bg-card p-6 shadow-card">
-            <h3 className="text-sm font-semibold">Related</h3>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {a.related.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => onAsk(r)}
-                  className="rounded-full border bg-background/60 px-3 py-1 text-xs hover:bg-accent/10"
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </section>
+            </section>
+          )}
         </div>
 
         <aside className="space-y-6">
           <div className="rounded-2xl border bg-card p-6 shadow-card">
             <div className="flex items-center justify-between">
               <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                AI confidence
+                Retrieval confidence
               </div>
               <GraduationCap className="h-4 w-4 text-accent" />
             </div>
@@ -323,7 +292,7 @@ function AnswerPanel({
               <span className="text-3xl font-bold gradient-text">
                 {Math.round(a.confidence * 100)}%
               </span>
-              <span className="text-xs text-muted-foreground">grounded</span>
+              <span className="text-xs text-muted-foreground">avg similarity</span>
             </div>
             <Progress value={a.confidence * 100} className="mt-3 h-1.5" />
           </div>
@@ -332,39 +301,51 @@ function AnswerPanel({
             <div className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
               Sources used
             </div>
-            <ul className="space-y-3">
-              {a.sources.map((s) => (
-                <li key={s.docId} className="rounded-lg border bg-background/60 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="secondary">{s.number}</Badge>
-                        <span>· p. {s.page}</span>
+            {a.sources.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No sources.</p>
+            ) : (
+              <ul className="space-y-3">
+                {a.sources.map((s) => (
+                  <li key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="secondary">[{s.index}]</Badge>
+                          <span>chunk {s.chunkIndex + 1}</span>
+                        </div>
+                        <div className="mt-1 truncate text-sm font-medium">{s.title}</div>
+                        {s.filename && (
+                          <div className="truncate text-xs text-muted-foreground">{s.filename}</div>
+                        )}
                       </div>
-                      <div className="mt-1 truncate text-sm font-medium">{s.title}</div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <button className="text-muted-foreground hover:text-foreground" aria-label="Open">
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <p className="mt-2 rounded bg-warning/20 px-2 py-1 text-xs italic text-foreground/80">
-                    &ldquo;{s.excerpt}&rdquo;
-                  </p>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="rounded-2xl border bg-card p-5 shadow-card">
             <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-              Actions
+              Follow up
             </div>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <FileText className="mr-2 h-4 w-4" /> Generate PDF report
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                size="sm"
+                onClick={() => onAsk(`Summarize key points about: ${query}`)}
+              >
+                <FileText className="mr-2 h-4 w-4" /> Summarize
               </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <Copy className="mr-2 h-4 w-4" /> Copy answer
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                size="sm"
+                onClick={() => onAsk(`List eligibility & documents required for: ${query}`)}
+              >
+                <FileText className="mr-2 h-4 w-4" /> Eligibility & docs
               </Button>
             </div>
           </div>
