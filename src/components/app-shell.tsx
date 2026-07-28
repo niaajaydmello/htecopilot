@@ -4,10 +4,8 @@ import {
   Search,
   FolderOpen,
   GitCompareArrows,
-  Clock3,
   BarChart3,
-  Brain,
-  Mic,
+
   Star,
   Settings,
   Sparkles,
