@@ -103,16 +103,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/70 px-6 backdrop-blur-xl">
-          <div className="relative flex-1 max-w-xl">
+          <form
+            className="relative flex-1 max-w-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = quick.trim();
+              if (!q) return;
+              navigate({ to: "/app/search", search: { q } });
+            }}
+          >
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              value={quick}
+              onChange={(e) => setQuick(e.target.value)}
               placeholder="Quick search — GRs, circulars, policies…"
               className="pl-9"
             />
             <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground md:block">
-              ⌘K
+              ↵
             </kbd>
-          </div>
+          </form>
+
           <div className="ml-auto flex items-center gap-2">
             <Badge variant="secondary" className="hidden md:inline-flex">
               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-success" /> AI online
