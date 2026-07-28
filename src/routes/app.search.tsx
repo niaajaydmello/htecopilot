@@ -447,3 +447,29 @@ function AnswerPanel({
     </div>
   );
 }
+
+function DecisionList({
+  icon: Icon,
+  title,
+  items,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  items: string[];
+}) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="rounded-xl border bg-background/60 p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold">
+        <Icon className="h-3.5 w-3.5 text-accent" /> {title}
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {items.map((it, i) => (
+          <li key={i} className="text-xs leading-relaxed text-muted-foreground">
+            • {it}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
