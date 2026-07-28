@@ -267,6 +267,88 @@ function AnswerPanel({
             </div>
           </section>
 
+          {a.keyPoints.length > 0 && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <ListChecks className="h-3.5 w-3.5" /> Key points
+              </div>
+              <ul className="mt-3 space-y-2">
+                {a.keyPoints.map((k, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{k}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {a.decisionSupport && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <Lightbulb className="h-3.5 w-3.5" /> Informed decision making
+              </div>
+              {a.decisionSupport.recommendation && (
+                <p className="mt-3 rounded-xl border bg-background/60 p-4 text-sm leading-relaxed">
+                  {a.decisionSupport.recommendation}
+                </p>
+              )}
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <DecisionList
+                  icon={Scale}
+                  title="Considerations"
+                  items={a.decisionSupport.considerations}
+                />
+                <DecisionList
+                  icon={AlertTriangle}
+                  title="Risks"
+                  items={a.decisionSupport.risks}
+                />
+                <DecisionList
+                  icon={ListChecks}
+                  title="Next steps"
+                  items={a.decisionSupport.nextSteps}
+                />
+              </div>
+            </section>
+          )}
+
+          {a.references.length > 0 && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <Library className="h-3.5 w-3.5" /> References to official documents
+              </div>
+              <ol className="mt-3 space-y-3">
+                {a.references.map((r) => (
+                  <li
+                    key={r.docId}
+                    className="flex items-start gap-3 rounded-xl border bg-background/60 p-4"
+                  >
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{r.title}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline">{r.type}</Badge>
+                        {r.filename && <span className="truncate">{r.filename}</span>}
+                        <span>· {r.passages} passage{r.passages === 1 ? "" : "s"} cited</span>
+                        <span>· relevance {Math.round(r.topSimilarity * 100)}%</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      {r.citations.map((c) => (
+                        <Badge key={c} variant="secondary">
+                          [{c}]
+                        </Badge>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+
+
           {a.sources.length > 0 && (
             <section className="rounded-2xl border bg-card p-6 shadow-card">
               <h3 className="text-sm font-semibold">Retrieved passages</h3>
