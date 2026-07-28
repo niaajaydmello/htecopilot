@@ -53,6 +53,11 @@ function Library() {
   const [q, setQ] = useState("");
   const [type, setType] = useState<DocType | "All">("All");
   const [year, setYear] = useState<number | "All">("All");
+  const [catalogueDoc, setCatalogueDoc] = useState<{
+    doc: HteDoc;
+    mode: "preview" | "summary";
+  } | null>(null);
+
 
   const years = Array.from(new Set(documents.map((d) => d.year))).sort((a, b) => b - a);
 
