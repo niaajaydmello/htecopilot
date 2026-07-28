@@ -120,19 +120,23 @@ function Library() {
                 ))}
               </div>
               <div className="mt-auto pt-4 flex items-center gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <FileText className="mr-1.5 h-3.5 w-3.5" /> Preview
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCatalogueDoc({ doc: d, mode: "preview" })}
+                >
+                  <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview
                 </Button>
-                <Button size="sm" variant="ghost">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setCatalogueDoc({ doc: d, mode: "summary" })}
+                >
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Summary
                 </Button>
-                <Button size="icon" variant="ghost" aria-label="Bookmark">
-                  <BookmarkPlus className="h-4 w-4" />
-                </Button>
-                <Button size="icon" variant="ghost" aria-label="Download">
-                  <Download className="h-4 w-4" />
-                </Button>
               </div>
+
             </article>
           ))}
         </div>
