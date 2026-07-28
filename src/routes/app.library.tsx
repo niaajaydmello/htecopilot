@@ -146,9 +146,73 @@ function Library() {
           ))}
         </div>
       </div>
+
+      <Dialog open={!!catalogueDoc} onOpenChange={(o) => !o && setCatalogueDoc(null)}>
+        <DialogContent className="max-w-2xl">
+          {catalogueDoc && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{catalogueDoc.doc.title}</DialogTitle>
+                <DialogDescription>
+                  {catalogueDoc.doc.number} · {catalogueDoc.doc.type} · {catalogueDoc.doc.date} ·{" "}
+                  {catalogueDoc.doc.pages} pages
+                </DialogDescription>
+              </DialogHeader>
+              {catalogueDoc.mode === "preview" ? (
+                <div className="space-y-3 text-sm">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <InfoRow label="Department" value={catalogueDoc.doc.department} />
+                    <InfoRow label="Year" value={String(catalogueDoc.doc.year)} />
+                    <InfoRow label="Reference" value={catalogueDoc.doc.number} />
+                    <InfoRow label="Type" value={catalogueDoc.doc.type} />
+                  </div>
+                  <p className="rounded-xl border bg-background/60 p-4 leading-relaxed">
+                    {catalogueDoc.doc.summary}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {catalogueDoc.doc.tags.map((t) => (
+                      <Badge key={t} variant="secondary">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                    <Sparkles className="h-3.5 w-3.5" /> Summary
+                  </div>
+                  <p className="rounded-xl border bg-background/60 p-4 leading-relaxed">
+                    {catalogueDoc.doc.summary}
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li>• Applies to: {catalogueDoc.doc.department}</li>
+                    <li>• Issued on {catalogueDoc.doc.date} ({catalogueDoc.doc.year})</li>
+                    <li>• Key themes: {catalogueDoc.doc.tags.join(", ")}</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">
+                    Upload this document above to get a full AI-generated summary grounded on its
+                    actual text.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border bg-background/60 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-sm">{value}</div>
+    </div>
+  );
+}
+
 
 function UploadPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
