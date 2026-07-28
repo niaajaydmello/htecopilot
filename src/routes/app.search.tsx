@@ -74,7 +74,15 @@ function SearchPage() {
     }
   };
 
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  useEffect(() => {
+    if (q && q.trim()) askRef.current(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
   const docCount = docs?.length ?? 0;
+
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -135,9 +143,6 @@ function Hero({
             }}
           />
           <div className="mt-2 flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              <Mic className="mr-1.5 h-4 w-4" /> Voice
-            </Button>
             <div className="ml-auto flex items-center gap-2">
               <span className="hidden text-xs text-muted-foreground md:inline">⌘+↵ to send</span>
               <Button onClick={() => onAsk(query)} className="gradient-primary shadow-elevated">
@@ -145,6 +150,7 @@ function Hero({
               </Button>
             </div>
           </div>
+
         </div>
       </div>
 
