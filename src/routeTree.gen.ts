@@ -13,9 +13,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppWorkflowRouteImport } from './routes/app.workflow'
-import { Route as AppVoiceRouteImport } from './routes/app.voice'
-import { Route as AppTimelineRouteImport } from './routes/app.timeline'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppSavedRouteImport } from './routes/app.saved'
@@ -41,21 +38,6 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppWorkflowRoute = AppWorkflowRouteImport.update({
-  id: '/workflow',
-  path: '/workflow',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppVoiceRoute = AppVoiceRouteImport.update({
-  id: '/voice',
-  path: '/voice',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTimelineRoute = AppTimelineRouteImport.update({
-  id: '/timeline',
-  path: '/timeline',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -99,9 +81,6 @@ export interface FileRoutesByFullPath {
   '/app/saved': typeof AppSavedRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
-  '/app/timeline': typeof AppTimelineRoute
-  '/app/voice': typeof AppVoiceRoute
-  '/app/workflow': typeof AppWorkflowRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -113,9 +92,6 @@ export interface FileRoutesByTo {
   '/app/saved': typeof AppSavedRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
-  '/app/timeline': typeof AppTimelineRoute
-  '/app/voice': typeof AppVoiceRoute
-  '/app/workflow': typeof AppWorkflowRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -129,9 +105,6 @@ export interface FileRoutesById {
   '/app/saved': typeof AppSavedRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
-  '/app/timeline': typeof AppTimelineRoute
-  '/app/voice': typeof AppVoiceRoute
-  '/app/workflow': typeof AppWorkflowRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -146,9 +119,6 @@ export interface FileRouteTypes {
     | '/app/saved'
     | '/app/search'
     | '/app/settings'
-    | '/app/timeline'
-    | '/app/voice'
-    | '/app/workflow'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -160,9 +130,6 @@ export interface FileRouteTypes {
     | '/app/saved'
     | '/app/search'
     | '/app/settings'
-    | '/app/timeline'
-    | '/app/voice'
-    | '/app/workflow'
     | '/app'
   id:
     | '__root__'
@@ -175,9 +142,6 @@ export interface FileRouteTypes {
     | '/app/saved'
     | '/app/search'
     | '/app/settings'
-    | '/app/timeline'
-    | '/app/voice'
-    | '/app/workflow'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -215,27 +179,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/workflow': {
-      id: '/app/workflow'
-      path: '/workflow'
-      fullPath: '/app/workflow'
-      preLoaderRoute: typeof AppWorkflowRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/voice': {
-      id: '/app/voice'
-      path: '/voice'
-      fullPath: '/app/voice'
-      preLoaderRoute: typeof AppVoiceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/timeline': {
-      id: '/app/timeline'
-      path: '/timeline'
-      fullPath: '/app/timeline'
-      preLoaderRoute: typeof AppTimelineRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -290,9 +233,6 @@ interface AppRouteChildren {
   AppSavedRoute: typeof AppSavedRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppTimelineRoute: typeof AppTimelineRoute
-  AppVoiceRoute: typeof AppVoiceRoute
-  AppWorkflowRoute: typeof AppWorkflowRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -303,9 +243,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppSavedRoute: AppSavedRoute,
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppTimelineRoute: AppTimelineRoute,
-  AppVoiceRoute: AppVoiceRoute,
-  AppWorkflowRoute: AppWorkflowRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
