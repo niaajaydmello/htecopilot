@@ -96,13 +96,13 @@ function Hero() {
             <ShieldCheck className="mr-1.5 h-3 w-3" />
             Trusted • Cited • Explainable
           </Badge>
-          <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-            <span className="gradient-text">HTE AI Copilot</span>
+          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
+            Instant, reliable access to{" "}
+            <span className="gradient-text">administrative knowledge.</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            Instant, reliable access to administrative knowledge for
-            <br className="hidden md:block" />
-            Maharashtra&apos;s Higher &amp; Technical Education Department.
+            HTE AI Copilot for Maharashtra&apos;s Higher &amp; Technical Education Department —
+            grounded, cited answers from your official documents.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/app/search">
@@ -115,10 +115,8 @@ function Hero() {
                 <FileText className="mr-2 h-4 w-4" /> Explore Documents
               </Button>
             </Link>
-            <Button size="lg" variant="ghost">
-              Watch Demo <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
           </div>
+
         </div>
 
         <div className="mx-auto mt-20 max-w-5xl">
