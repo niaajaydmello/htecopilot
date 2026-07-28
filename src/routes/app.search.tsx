@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   Search,
   Sparkles,
-  Mic,
   Send,
   BookmarkPlus,
   Copy,
@@ -15,6 +14,11 @@ import {
   ExternalLink,
   GraduationCap,
   Database,
+  Lightbulb,
+  AlertTriangle,
+  ListChecks,
+  Scale,
+  Library,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { exampleQueries, suggestedQuestions } from "@/lib/hte-data";
 import { ragSearch, listIngestedDocuments } from "@/lib/rag.functions";
+
 
 const searchSchema = z.object({ q: z.string().optional() });
 
