@@ -405,6 +405,32 @@ function IngestedList() {
               </div>
               <Badge variant="outline">{d.doc_type}</Badge>
               <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onPreview(d.id, d.title)}
+                disabled={busyId === d.id + ":preview"}
+              >
+                {busyId === d.id + ":preview" ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Preview
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSummary(d.id, d.title)}
+                disabled={busyId === d.id + ":summary"}
+              >
+                {busyId === d.id + ":summary" ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Summary
+              </Button>
+              <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => onDelete(d.id, d.title)}
@@ -416,9 +442,36 @@ function IngestedList() {
           ))}
         </ul>
       )}
+
+      <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{open?.title}</DialogTitle>
+            <DialogDescription>
+              {open?.mode === "summary" ? "AI-generated summary" : "Extracted document text"}
+            </DialogDescription>
+          </DialogHeader>
+          {open?.body == null ? (
+            <div className="space-y-2 py-4">
+              {[80, 95, 65, 90].map((w, i) => (
+                <div
+                  key={i}
+                  className="h-3 animate-pulse rounded bg-muted"
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap rounded-xl border bg-background/60 p-4 text-sm leading-relaxed">
+              {open.body}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
+
 
 function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
