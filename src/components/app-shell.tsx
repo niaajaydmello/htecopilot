@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Search,
@@ -39,7 +39,10 @@ const nav: NavItem[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [quick, setQuick] = useState("");
   const [dark, setDark] = useState(false);
+
 
   useEffect(() => {
     const stored = typeof window !== "undefined" && localStorage.getItem("hte-theme");
