@@ -135,10 +135,36 @@ export const ragSearch = createServerFn({ method: "POST" })
       return {
         answer:
           "No ingested documents are available yet. Please upload a document from the Document Library so the AI can answer from your official sources.",
+        keyPoints: [] as string[],
+        decisionSupport: null as {
+          recommendation: string;
+          considerations: string[];
+          risks: string[];
+          nextSteps: string[];
+        } | null,
         confidence: 0,
-        sources: [],
+        sources: [] as Array<{
+          index: number;
+          docId: string;
+          title: string;
+          type: string;
+          filename: string | null;
+          chunkIndex: number;
+          excerpt: string;
+          similarity: number;
+        }>,
+        references: [] as Array<{
+          docId: string;
+          title: string;
+          type: string;
+          filename: string | null;
+          citations: number[];
+          topSimilarity: number;
+          passages: number;
+        }>,
       };
     }
+
 
     const docIds = Array.from(new Set(chunks.map((c) => c.document_id)));
     const { data: docs } = await supabaseAdmin
