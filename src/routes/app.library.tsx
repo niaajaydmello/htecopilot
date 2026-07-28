@@ -325,6 +325,43 @@ function IngestedList() {
     queryFn: () => listDocs(),
   });
 
+  const preview = useServerFn(getDocumentPreview);
+  const summarize = useServerFn(summarizeDocument);
+  const [open, setOpen] = useState<{
+    title: string;
+    mode: "preview" | "summary";
+    body: string | null;
+  } | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const onPreview = async (id: string, title: string) => {
+    setBusyId(id + ":preview");
+    setOpen({ title, mode: "preview", body: null });
+    try {
+      const res = await preview({ data: { id } });
+      setOpen({ title, mode: "preview", body: res.text || "No extracted text stored." });
+    } catch (e) {
+      setOpen(null);
+      toast.error(e instanceof Error ? e.message : "Preview failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onSummary = async (id: string, title: string) => {
+    setBusyId(id + ":summary");
+    setOpen({ title, mode: "summary", body: null });
+    try {
+      const res = await summarize({ data: { id } });
+      setOpen({ title: res.title, mode: "summary", body: res.summary });
+    } catch (e) {
+      setOpen(null);
+      toast.error(e instanceof Error ? e.message : "Summary failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const onDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}" and its embeddings?`)) return;
     try {
@@ -335,6 +372,7 @@ function IngestedList() {
       toast.error(e instanceof Error ? e.message : "Delete failed");
     }
   };
+
 
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-card">
