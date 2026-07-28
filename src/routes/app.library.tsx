@@ -13,20 +13,31 @@ import {
   Loader2,
   Trash2,
   Database,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { documents, type DocType } from "@/lib/hte-data";
+import { documents, type DocType, type HteDoc } from "@/lib/hte-data";
 import { extractTextFromFile } from "@/lib/extract-text";
 import {
   ingestDocument,
   listIngestedDocuments,
   deleteIngestedDocument,
+  getDocumentPreview,
+  summarizeDocument,
 } from "@/lib/rag.functions";
 
 const TYPES: DocType[] = ["GR", "Circular", "Notification", "Policy", "Scheme"];
+
 
 export const Route = createFileRoute("/app/library")({
   head: () => ({
