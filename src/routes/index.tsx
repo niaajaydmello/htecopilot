@@ -4,15 +4,13 @@ import {
   Search,
   FileText,
   GitCompareArrows,
-  Workflow,
   ShieldCheck,
   Zap,
   BarChart3,
-  Mic,
-  ArrowRight,
   CheckCircle2,
   Quote,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -157,11 +155,12 @@ function Hero() {
 function Features() {
   const items = [
     { i: Search, t: "AI Semantic Search", d: "Natural-language search across every GR, circular and notification." },
-    { i: ShieldCheck, t: "Grounded, Cited Answers", d: "Every answer shows source GR, page number and confidence score." },
+    { i: ShieldCheck, t: "Grounded, Cited Answers", d: "Every answer shows source document, passage and confidence score." },
     { i: GitCompareArrows, t: "Document Comparison", d: "Diff two GRs — added, removed, modified — in a visual table." },
-    { i: Workflow, t: "Workflow Generation", d: "Turn a question into an approval flowchart with timelines." },
+    { i: FileText, t: "Document Library", d: "Upload official documents; they are chunked, embedded and searchable." },
     { i: BarChart3, t: "Analytics", d: "Track most-searched topics, usage trends and policy references." },
-    { i: Mic, t: "Voice Search", d: "Ask in Marathi or English — hear the answer read back." },
+    { i: Zap, t: "Decision Support", d: "Recommendations, risks and next steps drawn from official sources." },
+
   ];
   return (
     <section id="features" className="mx-auto max-w-7xl px-6 py-24">
@@ -216,7 +215,7 @@ function Benefits() {
     "Cut research time from hours to seconds",
     "Every answer traceable to an official GR",
     "Compare rule changes across years instantly",
-    "Marathi + English answers with voice",
+    "Upload your own documents and query them instantly",
     "Role-based views for officers, faculty & students",
     "Audit-ready citations for every decision",
   ];
@@ -290,11 +289,8 @@ function Footer() {
     <footer className="border-t bg-muted/20">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-10 text-xs text-muted-foreground md:flex-row">
         <div>© {new Date().getFullYear()} Maharashtra HTE Department. All rights reserved.</div>
-        <div className="flex gap-6">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
-        </div>
+        <div>Grounded on official Government Resolutions, circulars and policies.</div>
+
       </div>
     </footer>
   );
