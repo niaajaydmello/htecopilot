@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   Search,
   Sparkles,
-  Mic,
   Send,
   BookmarkPlus,
   Copy,
@@ -15,6 +14,11 @@ import {
   ExternalLink,
   GraduationCap,
   Database,
+  Lightbulb,
+  AlertTriangle,
+  ListChecks,
+  Scale,
+  Library,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +73,12 @@ function SearchPage() {
     }
   };
 
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  useEffect(() => {
+    if (q && q.trim()) askRef.current(q);
+  }, [q]);
+
   const docCount = docs?.length ?? 0;
 
   return (
@@ -78,12 +88,7 @@ function SearchPage() {
       )}
       {loading && <Loading query={askedQuery} docCount={docCount} />}
       {answer && (
-        <AnswerPanel
-          query={askedQuery}
-          a={answer}
-          onAsk={ask}
-          onReset={() => setAnswer(null)}
-        />
+        <AnswerPanel query={askedQuery} a={answer} onAsk={ask} onReset={() => setAnswer(null)} />
       )}
     </div>
   );
@@ -130,9 +135,6 @@ function Hero({
             }}
           />
           <div className="mt-2 flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              <Mic className="mr-1.5 h-4 w-4" /> Voice
-            </Button>
             <div className="ml-auto flex items-center gap-2">
               <span className="hidden text-xs text-muted-foreground md:inline">⌘+↵ to send</span>
               <Button onClick={() => onAsk(query)} className="gradient-primary shadow-elevated">
@@ -256,19 +258,98 @@ function AnswerPanel({
             </div>
           </section>
 
+          {a.keyPoints.length > 0 && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <ListChecks className="h-3.5 w-3.5" /> Key points
+              </div>
+              <ul className="mt-3 space-y-2">
+                {a.keyPoints.map((k, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{k}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {a.decisionSupport && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <Lightbulb className="h-3.5 w-3.5" /> Informed decision making
+              </div>
+              {a.decisionSupport.recommendation && (
+                <p className="mt-3 rounded-xl border bg-background/60 p-4 text-sm leading-relaxed">
+                  {a.decisionSupport.recommendation}
+                </p>
+              )}
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <DecisionList
+                  icon={Scale}
+                  title="Considerations"
+                  items={a.decisionSupport.considerations}
+                />
+                <DecisionList icon={AlertTriangle} title="Risks" items={a.decisionSupport.risks} />
+                <DecisionList
+                  icon={ListChecks}
+                  title="Next steps"
+                  items={a.decisionSupport.nextSteps}
+                />
+              </div>
+            </section>
+          )}
+
+          {a.references.length > 0 && (
+            <section className="rounded-2xl border bg-card p-6 shadow-card">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                <Library className="h-3.5 w-3.5" /> References to official documents
+              </div>
+              <ol className="mt-3 space-y-3">
+                {a.references.map((r) => (
+                  <li
+                    key={r.docId}
+                    className="flex items-start gap-3 rounded-xl border bg-background/60 p-4"
+                  >
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{r.title}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline">{r.type}</Badge>
+                        {r.filename && <span className="truncate">{r.filename}</span>}
+                        <span>
+                          · {r.passages} passage{r.passages === 1 ? "" : "s"} cited
+                        </span>
+                        <span>· relevance {Math.round(r.topSimilarity * 100)}%</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      {r.citations.map((c) => (
+                        <Badge key={c} variant="secondary">
+                          [{c}]
+                        </Badge>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
           {a.sources.length > 0 && (
             <section className="rounded-2xl border bg-card p-6 shadow-card">
               <h3 className="text-sm font-semibold">Retrieved passages</h3>
               <div className="mt-3 space-y-3">
                 {a.sources.map((s) => (
-                  <div key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                  <div
+                    key={`${s.docId}-${s.chunkIndex}`}
+                    className="rounded-lg border bg-background/60 p-3"
+                  >
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="secondary">[{s.index}]</Badge>
                       <Badge variant="outline">{s.type}</Badge>
                       <span className="truncate">{s.title}</span>
-                      <span className="ml-auto">
-                        sim {Math.round(s.similarity * 100)}%
-                      </span>
+                      <span className="ml-auto">sim {Math.round(s.similarity * 100)}%</span>
                     </div>
                     <p className="mt-2 line-clamp-4 text-xs italic text-foreground/80">
                       &ldquo;{s.excerpt}&rdquo;
@@ -306,7 +387,10 @@ function AnswerPanel({
             ) : (
               <ul className="space-y-3">
                 {a.sources.map((s) => (
-                  <li key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                  <li
+                    key={`${s.docId}-${s.chunkIndex}`}
+                    className="rounded-lg border bg-background/60 p-3"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -351,6 +435,32 @@ function AnswerPanel({
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function DecisionList({
+  icon: Icon,
+  title,
+  items,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  items: string[];
+}) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="rounded-xl border bg-background/60 p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold">
+        <Icon className="h-3.5 w-3.5 text-accent" /> {title}
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {items.map((it, i) => (
+          <li key={i} className="text-xs leading-relaxed text-muted-foreground">
+            • {it}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

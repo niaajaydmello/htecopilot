@@ -4,15 +4,13 @@ import {
   Search,
   FileText,
   GitCompareArrows,
-  Workflow,
   ShieldCheck,
   Zap,
   BarChart3,
-  Mic,
-  ArrowRight,
   CheckCircle2,
   Quote,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,14 +65,24 @@ function Nav() {
           </div>
         </Link>
         <nav className="hidden gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#features" className="hover:text-foreground">Features</a>
-          <a href="#how" className="hover:text-foreground">How it works</a>
-          <a href="#benefits" className="hover:text-foreground">Benefits</a>
-          <a href="#tech" className="hover:text-foreground">Technology</a>
+          <a href="#features" className="hover:text-foreground">
+            Features
+          </a>
+          <a href="#how" className="hover:text-foreground">
+            How it works
+          </a>
+          <a href="#benefits" className="hover:text-foreground">
+            Benefits
+          </a>
+          <a href="#tech" className="hover:text-foreground">
+            Technology
+          </a>
         </nav>
         <div className="flex items-center gap-2">
           <Link to="/auth">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="ghost" size="sm">
+              Sign in
+            </Button>
           </Link>
           <Link to="/app">
             <Button size="sm" className="gradient-primary shadow-elevated">
@@ -96,13 +104,13 @@ function Hero() {
             <ShieldCheck className="mr-1.5 h-3 w-3" />
             Trusted • Cited • Explainable
           </Badge>
-          <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-            <span className="gradient-text">HTE AI Copilot</span>
+          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
+            Instant, reliable access to{" "}
+            <span className="gradient-text">administrative knowledge.</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            Instant, reliable access to administrative knowledge for
-            <br className="hidden md:block" />
-            Maharashtra&apos;s Higher &amp; Technical Education Department.
+            HTE AI Copilot for Maharashtra&apos;s Higher &amp; Technical Education Department —
+            grounded, cited answers from your official documents.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link to="/app/search">
@@ -115,9 +123,6 @@ function Hero() {
                 <FileText className="mr-2 h-4 w-4" /> Explore Documents
               </Button>
             </Link>
-            <Button size="lg" variant="ghost">
-              Watch Demo <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
           </div>
         </div>
 
@@ -158,24 +163,52 @@ function Hero() {
 
 function Features() {
   const items = [
-    { i: Search, t: "AI Semantic Search", d: "Natural-language search across every GR, circular and notification." },
-    { i: ShieldCheck, t: "Grounded, Cited Answers", d: "Every answer shows source GR, page number and confidence score." },
-    { i: GitCompareArrows, t: "Document Comparison", d: "Diff two GRs — added, removed, modified — in a visual table." },
-    { i: Workflow, t: "Workflow Generation", d: "Turn a question into an approval flowchart with timelines." },
-    { i: BarChart3, t: "Analytics", d: "Track most-searched topics, usage trends and policy references." },
-    { i: Mic, t: "Voice Search", d: "Ask in Marathi or English — hear the answer read back." },
+    {
+      i: Search,
+      t: "AI Semantic Search",
+      d: "Natural-language search across every GR, circular and notification.",
+    },
+    {
+      i: ShieldCheck,
+      t: "Grounded, Cited Answers",
+      d: "Every answer shows source document, passage and confidence score.",
+    },
+    {
+      i: GitCompareArrows,
+      t: "Document Comparison",
+      d: "Diff two GRs — added, removed, modified — in a visual table.",
+    },
+    {
+      i: FileText,
+      t: "Document Library",
+      d: "Upload official documents; they are chunked, embedded and searchable.",
+    },
+    {
+      i: BarChart3,
+      t: "Analytics",
+      d: "Track most-searched topics, usage trends and policy references.",
+    },
+    {
+      i: Zap,
+      t: "Decision Support",
+      d: "Recommendations, risks and next steps drawn from official sources.",
+    },
   ];
   return (
     <section id="features" className="mx-auto max-w-7xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-4xl font-bold">Built for administrative decisions.</h2>
         <p className="mt-4 text-muted-foreground">
-          Not a chatbot. A decision-support platform that reads, cites and reasons over official documents.
+          Not a chatbot. A decision-support platform that reads, cites and reasons over official
+          documents.
         </p>
       </div>
       <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((f) => (
-          <div key={f.t} className="group rounded-2xl border bg-card p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated">
+          <div
+            key={f.t}
+            className="group rounded-2xl border bg-card p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+          >
             <div className="grid h-10 w-10 place-items-center rounded-lg gradient-primary text-primary-foreground shadow-elevated">
               <f.i className="h-5 w-5" />
             </div>
@@ -218,7 +251,7 @@ function Benefits() {
     "Cut research time from hours to seconds",
     "Every answer traceable to an official GR",
     "Compare rule changes across years instantly",
-    "Marathi + English answers with voice",
+    "Upload your own documents and query them instantly",
     "Role-based views for officers, faculty & students",
     "Audit-ready citations for every decision",
   ];
@@ -228,12 +261,16 @@ function Benefits() {
         <div>
           <h2 className="text-4xl font-bold">Why teams choose HTE Copilot</h2>
           <p className="mt-4 text-muted-foreground">
-            Designed with the discipline of a Stripe dashboard and the intelligence of a modern research assistant.
+            Designed with the discipline of a Stripe dashboard and the intelligence of a modern
+            research assistant.
           </p>
         </div>
         <ul className="grid gap-3">
           {items.map((b) => (
-            <li key={b} className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-card">
+            <li
+              key={b}
+              className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-card"
+            >
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
               <span className="text-sm">{b}</span>
             </li>
@@ -246,9 +283,18 @@ function Benefits() {
 
 function Testimonials() {
   const quotes = [
-    { q: "We answered a legislative query in 90 seconds. It used to take a full day.", n: "Deputy Secretary, HTE" },
-    { q: "The comparison view caught three clause changes our team had missed.", n: "Joint Director, DTE" },
-    { q: "Faculty finally have one place to check scholarship eligibility.", n: "Principal, Govt. Polytechnic" },
+    {
+      q: "We answered a legislative query in 90 seconds. It used to take a full day.",
+      n: "Deputy Secretary, HTE",
+    },
+    {
+      q: "The comparison view caught three clause changes our team had missed.",
+      n: "Joint Director, DTE",
+    },
+    {
+      q: "Faculty finally have one place to check scholarship eligibility.",
+      n: "Principal, Govt. Polytechnic",
+    },
   ];
   return (
     <section className="border-y bg-muted/30 py-24">
@@ -269,12 +315,24 @@ function Testimonials() {
 }
 
 function TechStack() {
-  const tech = ["React", "TypeScript", "Tailwind CSS", "FastAPI", "RAG", "FAISS", "Gemini", "Whisper", "PyMuPDF"];
+  const tech = [
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "FastAPI",
+    "RAG",
+    "FAISS",
+    "Gemini",
+    "Whisper",
+    "PyMuPDF",
+  ];
   return (
     <section id="tech" className="mx-auto max-w-7xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-4xl font-bold">Built on a modern AI stack</h2>
-        <p className="mt-3 text-muted-foreground">Hybrid retrieval, grounded generation, speech &amp; translation — all production ready.</p>
+        <p className="mt-3 text-muted-foreground">
+          Hybrid retrieval, grounded generation, speech &amp; translation — all production ready.
+        </p>
       </div>
       <div className="mt-10 flex flex-wrap justify-center gap-2">
         {tech.map((t) => (
@@ -292,11 +350,7 @@ function Footer() {
     <footer className="border-t bg-muted/20">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-10 text-xs text-muted-foreground md:flex-row">
         <div>© {new Date().getFullYear()} Maharashtra HTE Department. All rights reserved.</div>
-        <div className="flex gap-6">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
-        </div>
+        <div>Grounded on official Government Resolutions, circulars and policies.</div>
       </div>
     </footer>
   );

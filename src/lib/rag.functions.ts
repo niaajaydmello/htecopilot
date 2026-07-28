@@ -135,8 +135,33 @@ export const ragSearch = createServerFn({ method: "POST" })
       return {
         answer:
           "No ingested documents are available yet. Please upload a document from the Document Library so the AI can answer from your official sources.",
+        keyPoints: [] as string[],
+        decisionSupport: null as {
+          recommendation: string;
+          considerations: string[];
+          risks: string[];
+          nextSteps: string[];
+        } | null,
         confidence: 0,
-        sources: [],
+        sources: [] as Array<{
+          index: number;
+          docId: string;
+          title: string;
+          type: string;
+          filename: string | null;
+          chunkIndex: number;
+          excerpt: string;
+          similarity: number;
+        }>,
+        references: [] as Array<{
+          docId: string;
+          title: string;
+          type: string;
+          filename: string | null;
+          citations: number[];
+          topSimilarity: number;
+          passages: number;
+        }>,
       };
     }
 
@@ -154,7 +179,19 @@ export const ragSearch = createServerFn({ method: "POST" })
       })
       .join("\n\n---\n\n");
 
-    const system = `You are HTE Copilot, an assistant for the Maharashtra Higher & Technical Education Department. Answer ONLY from the provided context. Cite sources inline using [1], [2] matching the context indices. If the answer is not in the context, say so honestly. Be concise, structured, and use plain language suitable for government officers.`;
+    const system = `You are HTE Copilot, an assistant for the Maharashtra Higher & Technical Education Department. Answer ONLY from the provided context. Cite sources inline using [1], [2] matching the context indices. If the answer is not in the context, say so honestly.
+
+Respond with STRICT JSON only (no markdown fences), matching:
+{
+  "answer": "concise structured answer with inline [n] citations",
+  "keyPoints": ["3-5 short factual bullets with [n] citations"],
+  "decisionSupport": {
+    "recommendation": "one-paragraph recommended course of action for the officer",
+    "considerations": ["2-4 factors to weigh before deciding"],
+    "risks": ["1-3 compliance or procedural risks"],
+    "nextSteps": ["2-5 concrete actionable steps"]
+  }
+}`;
 
     const userMsg = `Question: ${data.query}\n\nContext:\n${context}`;
 
@@ -176,24 +213,148 @@ export const ragSearch = createServerFn({ method: "POST" })
     const json = (await res.json()) as {
       choices: { message: { content: string } }[];
     };
-    const answer = json.choices?.[0]?.message?.content ?? "No answer generated.";
+    const raw = json.choices?.[0]?.message?.content ?? "";
+
+    type Decision = {
+      recommendation: string;
+      considerations: string[];
+      risks: string[];
+      nextSteps: string[];
+    };
+    let answer = raw || "No answer generated.";
+    let keyPoints: string[] = [];
+    let decisionSupport: Decision | null = null;
+    try {
+      const cleaned = raw
+        .replace(/^```(?:json)?/i, "")
+        .replace(/```$/, "")
+        .trim();
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      const parsed = JSON.parse(cleaned.slice(start, end + 1)) as {
+        answer?: string;
+        keyPoints?: string[];
+        decisionSupport?: Partial<Decision>;
+      };
+      if (parsed.answer) answer = parsed.answer;
+      keyPoints = Array.isArray(parsed.keyPoints) ? parsed.keyPoints.slice(0, 6) : [];
+      if (parsed.decisionSupport) {
+        decisionSupport = {
+          recommendation: parsed.decisionSupport.recommendation ?? "",
+          considerations: parsed.decisionSupport.considerations ?? [],
+          risks: parsed.decisionSupport.risks ?? [],
+          nextSteps: parsed.decisionSupport.nextSteps ?? [],
+        };
+      }
+    } catch {
+      // keep raw text answer
+    }
+
     const avgSim = chunks.reduce((s, c) => s + c.similarity, 0) / chunks.length;
+
+    const sources = chunks.map((c, i) => {
+      const d = docMap.get(c.document_id);
+      return {
+        index: i + 1,
+        docId: c.document_id,
+        title: d?.title ?? "Document",
+        type: d?.doc_type ?? "Uploaded",
+        filename: d?.filename ?? null,
+        chunkIndex: c.chunk_index,
+        excerpt: c.content.slice(0, 320),
+        similarity: c.similarity,
+      };
+    });
+
+    const references = docIds.map((id) => {
+      const d = docMap.get(id);
+      const forDoc = sources.filter((s) => s.docId === id);
+      return {
+        docId: id,
+        title: d?.title ?? "Document",
+        type: d?.doc_type ?? "Uploaded",
+        filename: d?.filename ?? null,
+        citations: forDoc.map((s) => s.index),
+        topSimilarity: Math.max(...forDoc.map((s) => s.similarity)),
+        passages: forDoc.length,
+      };
+    });
 
     return {
       answer,
+      keyPoints,
+      decisionSupport,
       confidence: Math.max(0, Math.min(1, avgSim)),
-      sources: chunks.map((c, i) => {
-        const d = docMap.get(c.document_id);
-        return {
-          index: i + 1,
-          docId: c.document_id,
-          title: d?.title ?? "Document",
-          type: d?.doc_type ?? "Uploaded",
-          filename: d?.filename ?? null,
-          chunkIndex: c.chunk_index,
-          excerpt: c.content.slice(0, 320),
-          similarity: c.similarity,
-        };
+      sources,
+      references,
+    };
+  });
+
+const SummarizeSchema = z.object({ id: z.string().uuid() });
+
+export const getDocumentPreview = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => SummarizeSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: doc, error: docErr } = await supabaseAdmin
+      .from("rag_documents")
+      .select("id, title, doc_type, filename, chunk_count, char_count, created_at")
+      .eq("id", data.id)
+      .single();
+    if (docErr || !doc) throw new Error(docErr?.message ?? "Document not found");
+    const { data: chunks, error } = await supabaseAdmin
+      .from("rag_chunks")
+      .select("chunk_index, content")
+      .eq("document_id", data.id)
+      .order("chunk_index", { ascending: true })
+      .limit(6);
+    if (error) throw new Error(error.message);
+    return { document: doc, text: (chunks ?? []).map((c) => c.content).join("\n\n") };
+  });
+
+export const summarizeDocument = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => SummarizeSchema.parse(input))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: doc } = await supabaseAdmin
+      .from("rag_documents")
+      .select("title, doc_type")
+      .eq("id", data.id)
+      .single();
+    const { data: chunks, error } = await supabaseAdmin
+      .from("rag_chunks")
+      .select("content")
+      .eq("document_id", data.id)
+      .order("chunk_index", { ascending: true })
+      .limit(10);
+    if (error) throw new Error(error.message);
+    const text = (chunks ?? [])
+      .map((c) => c.content)
+      .join("\n\n")
+      .slice(0, 24_000);
+    if (!text) throw new Error("No content to summarize");
+
+    const res = await fetch(`${GATEWAY}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Summarize the official document for a government officer. Return 1 short overview paragraph followed by 4-6 bullet points covering scope, eligibility, obligations and timelines. Plain text only.",
+          },
+          { role: "user", content: `Document: ${doc?.title ?? ""}\n\n${text}` },
+        ],
       }),
+    });
+    if (!res.ok) throw new Error(`AI failed (${res.status})`);
+    const json = (await res.json()) as { choices: { message: { content: string } }[] };
+    return {
+      title: doc?.title ?? "Document",
+      summary: json.choices?.[0]?.message?.content ?? "No summary generated.",
     };
   });

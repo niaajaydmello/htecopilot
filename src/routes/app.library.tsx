@@ -5,25 +5,33 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Filter,
-  BookmarkPlus,
-  Download,
   Sparkles,
   FileText,
   Upload,
   Loader2,
   Trash2,
   Database,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { documents, type DocType } from "@/lib/hte-data";
+import { documents, type DocType, type HteDoc } from "@/lib/hte-data";
 import { extractTextFromFile } from "@/lib/extract-text";
 import {
   ingestDocument,
   listIngestedDocuments,
   deleteIngestedDocument,
+  getDocumentPreview,
+  summarizeDocument,
 } from "@/lib/rag.functions";
 
 const TYPES: DocType[] = ["GR", "Circular", "Notification", "Policy", "Scheme"];
@@ -42,6 +50,10 @@ function Library() {
   const [q, setQ] = useState("");
   const [type, setType] = useState<DocType | "All">("All");
   const [year, setYear] = useState<number | "All">("All");
+  const [catalogueDoc, setCatalogueDoc] = useState<{
+    doc: HteDoc;
+    mode: "preview" | "summary";
+  } | null>(null);
 
   const years = Array.from(new Set(documents.map((d) => d.year))).sort((a, b) => b - a);
 
@@ -69,7 +81,12 @@ function Library() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, number, tag…" className="pl-9" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search title, number, tag…"
+              className="pl-9"
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -81,7 +98,12 @@ function Library() {
           <div className="flex flex-wrap items-center gap-2">
             <FilterChip label="All years" active={year === "All"} onClick={() => setYear("All")} />
             {years.map((y) => (
-              <FilterChip key={y} label={String(y)} active={year === y} onClick={() => setYear(y)} />
+              <FilterChip
+                key={y}
+                label={String(y)}
+                active={year === y}
+                onClick={() => setYear(y)}
+              />
             ))}
           </div>
         </div>
@@ -93,39 +115,115 @@ function Library() {
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (
-            <article key={d.id} className="group flex flex-col rounded-2xl border bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated">
+            <article
+              key={d.id}
+              className="group flex flex-col rounded-2xl border bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+            >
               <div className="flex items-start justify-between gap-2">
                 <Badge variant="secondary">{d.type}</Badge>
                 <span className="text-xs text-muted-foreground">{d.date}</span>
               </div>
               <h3 className="mt-3 line-clamp-2 text-base font-semibold">{d.title}</h3>
-              <div className="mt-1 text-xs text-muted-foreground">{d.number} · {d.pages}p</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {d.number} · {d.pages}p
+              </div>
               <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{d.summary}</p>
               <div className="mt-3 flex flex-wrap gap-1">
                 {d.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent-foreground/80">
+                  <span
+                    key={t}
+                    className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent-foreground/80"
+                  >
                     {t}
                   </span>
                 ))}
               </div>
               <div className="mt-auto pt-4 flex items-center gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <FileText className="mr-1.5 h-3.5 w-3.5" /> Preview
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCatalogueDoc({ doc: d, mode: "preview" })}
+                >
+                  <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview
                 </Button>
-                <Button size="sm" variant="ghost">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setCatalogueDoc({ doc: d, mode: "summary" })}
+                >
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Summary
-                </Button>
-                <Button size="icon" variant="ghost" aria-label="Bookmark">
-                  <BookmarkPlus className="h-4 w-4" />
-                </Button>
-                <Button size="icon" variant="ghost" aria-label="Download">
-                  <Download className="h-4 w-4" />
                 </Button>
               </div>
             </article>
           ))}
         </div>
       </div>
+
+      <Dialog open={!!catalogueDoc} onOpenChange={(o) => !o && setCatalogueDoc(null)}>
+        <DialogContent className="max-w-2xl">
+          {catalogueDoc && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{catalogueDoc.doc.title}</DialogTitle>
+                <DialogDescription>
+                  {catalogueDoc.doc.number} · {catalogueDoc.doc.type} · {catalogueDoc.doc.date} ·{" "}
+                  {catalogueDoc.doc.pages} pages
+                </DialogDescription>
+              </DialogHeader>
+              {catalogueDoc.mode === "preview" ? (
+                <div className="space-y-3 text-sm">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <InfoRow label="Department" value={catalogueDoc.doc.department} />
+                    <InfoRow label="Year" value={String(catalogueDoc.doc.year)} />
+                    <InfoRow label="Reference" value={catalogueDoc.doc.number} />
+                    <InfoRow label="Type" value={catalogueDoc.doc.type} />
+                  </div>
+                  <p className="rounded-xl border bg-background/60 p-4 leading-relaxed">
+                    {catalogueDoc.doc.summary}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {catalogueDoc.doc.tags.map((t) => (
+                      <Badge key={t} variant="secondary">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
+                    <Sparkles className="h-3.5 w-3.5" /> Summary
+                  </div>
+                  <p className="rounded-xl border bg-background/60 p-4 leading-relaxed">
+                    {catalogueDoc.doc.summary}
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li>• Applies to: {catalogueDoc.doc.department}</li>
+                    <li>
+                      • Issued on {catalogueDoc.doc.date} ({catalogueDoc.doc.year})
+                    </li>
+                    <li>• Key themes: {catalogueDoc.doc.tags.join(", ")}</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">
+                    Upload this document above to get a full AI-generated summary grounded on its
+                    actual text.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border bg-background/60 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-sm">{value}</div>
     </div>
   );
 }
@@ -241,6 +339,43 @@ function IngestedList() {
     queryFn: () => listDocs(),
   });
 
+  const preview = useServerFn(getDocumentPreview);
+  const summarize = useServerFn(summarizeDocument);
+  const [open, setOpen] = useState<{
+    title: string;
+    mode: "preview" | "summary";
+    body: string | null;
+  } | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const onPreview = async (id: string, title: string) => {
+    setBusyId(id + ":preview");
+    setOpen({ title, mode: "preview", body: null });
+    try {
+      const res = await preview({ data: { id } });
+      setOpen({ title, mode: "preview", body: res.text || "No extracted text stored." });
+    } catch (e) {
+      setOpen(null);
+      toast.error(e instanceof Error ? e.message : "Preview failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onSummary = async (id: string, title: string) => {
+    setBusyId(id + ":summary");
+    setOpen({ title, mode: "summary", body: null });
+    try {
+      const res = await summarize({ data: { id } });
+      setOpen({ title: res.title, mode: "summary", body: res.summary });
+    } catch (e) {
+      setOpen(null);
+      toast.error(e instanceof Error ? e.message : "Summary failed");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const onDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}" and its embeddings?`)) return;
     try {
@@ -278,10 +413,37 @@ function IngestedList() {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{d.title}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {d.filename ?? "—"} · {d.chunk_count} chunks · {d.char_count.toLocaleString()} chars
+                  {d.filename ?? "—"} · {d.chunk_count} chunks · {d.char_count.toLocaleString()}{" "}
+                  chars
                 </div>
               </div>
               <Badge variant="outline">{d.doc_type}</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onPreview(d.id, d.title)}
+                disabled={busyId === d.id + ":preview"}
+              >
+                {busyId === d.id + ":preview" ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Preview
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSummary(d.id, d.title)}
+                disabled={busyId === d.id + ":summary"}
+              >
+                {busyId === d.id + ":summary" ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Summary
+              </Button>
               <Button
                 size="icon"
                 variant="ghost"
@@ -294,11 +456,45 @@ function IngestedList() {
           ))}
         </ul>
       )}
+
+      <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{open?.title}</DialogTitle>
+            <DialogDescription>
+              {open?.mode === "summary" ? "AI-generated summary" : "Extracted document text"}
+            </DialogDescription>
+          </DialogHeader>
+          {open?.body == null ? (
+            <div className="space-y-2 py-4">
+              {[80, 95, 65, 90].map((w, i) => (
+                <div
+                  key={i}
+                  className="h-3 animate-pulse rounded bg-muted"
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap rounded-xl border bg-background/60 p-4 text-sm leading-relaxed">
+              {open.body}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}

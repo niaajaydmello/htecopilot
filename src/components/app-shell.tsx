@@ -1,13 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Search,
   FolderOpen,
   GitCompareArrows,
-  Clock3,
   BarChart3,
-  Brain,
-  Mic,
   Star,
   Settings,
   Sparkles,
@@ -33,16 +30,15 @@ const nav: NavItem[] = [
   { to: "/app/search", label: "AI Search", icon: Search },
   { to: "/app/library", label: "Document Library", icon: FolderOpen },
   { to: "/app/compare", label: "Compare Documents", icon: GitCompareArrows },
-  { to: "/app/timeline", label: "Timeline Explorer", icon: Clock3 },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/app/workflow", label: "AI Assistant", icon: Brain },
-  { to: "/app/voice", label: "Voice Search", icon: Mic },
   { to: "/app/saved", label: "Saved Responses", icon: Star },
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [quick, setQuick] = useState("");
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -95,7 +91,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="border-t p-3">
           <div className="flex items-center gap-3 rounded-lg p-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-accent text-accent-foreground text-xs">RS</AvatarFallback>
+              <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                RS
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 leading-tight">
               <div className="text-sm font-medium">R. Shinde</div>
@@ -107,16 +105,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/70 px-6 backdrop-blur-xl">
-          <div className="relative flex-1 max-w-xl">
+          <form
+            className="relative flex-1 max-w-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = quick.trim();
+              if (!q) return;
+              navigate({ to: "/app/search", search: { q } });
+            }}
+          >
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              value={quick}
+              onChange={(e) => setQuick(e.target.value)}
               placeholder="Quick search — GRs, circulars, policies…"
               className="pl-9"
             />
             <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground md:block">
-              ⌘K
+              ↵
             </kbd>
-          </div>
+          </form>
+
           <div className="ml-auto flex items-center gap-2">
             <Badge variant="secondary" className="hidden md:inline-flex">
               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-success" /> AI online
