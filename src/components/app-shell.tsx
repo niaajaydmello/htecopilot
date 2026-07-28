@@ -33,13 +33,11 @@ const nav: NavItem[] = [
   { to: "/app/search", label: "AI Search", icon: Search },
   { to: "/app/library", label: "Document Library", icon: FolderOpen },
   { to: "/app/compare", label: "Compare Documents", icon: GitCompareArrows },
-  { to: "/app/timeline", label: "Timeline Explorer", icon: Clock3 },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/app/workflow", label: "AI Assistant", icon: Brain },
-  { to: "/app/voice", label: "Voice Search", icon: Mic },
   { to: "/app/saved", label: "Saved Responses", icon: Star },
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
+
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
