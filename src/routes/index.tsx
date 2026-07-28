@@ -65,14 +65,24 @@ function Nav() {
           </div>
         </Link>
         <nav className="hidden gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#features" className="hover:text-foreground">Features</a>
-          <a href="#how" className="hover:text-foreground">How it works</a>
-          <a href="#benefits" className="hover:text-foreground">Benefits</a>
-          <a href="#tech" className="hover:text-foreground">Technology</a>
+          <a href="#features" className="hover:text-foreground">
+            Features
+          </a>
+          <a href="#how" className="hover:text-foreground">
+            How it works
+          </a>
+          <a href="#benefits" className="hover:text-foreground">
+            Benefits
+          </a>
+          <a href="#tech" className="hover:text-foreground">
+            Technology
+          </a>
         </nav>
         <div className="flex items-center gap-2">
           <Link to="/auth">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="ghost" size="sm">
+              Sign in
+            </Button>
           </Link>
           <Link to="/app">
             <Button size="sm" className="gradient-primary shadow-elevated">
@@ -114,7 +124,6 @@ function Hero() {
               </Button>
             </Link>
           </div>
-
         </div>
 
         <div className="mx-auto mt-20 max-w-5xl">
@@ -154,25 +163,52 @@ function Hero() {
 
 function Features() {
   const items = [
-    { i: Search, t: "AI Semantic Search", d: "Natural-language search across every GR, circular and notification." },
-    { i: ShieldCheck, t: "Grounded, Cited Answers", d: "Every answer shows source document, passage and confidence score." },
-    { i: GitCompareArrows, t: "Document Comparison", d: "Diff two GRs — added, removed, modified — in a visual table." },
-    { i: FileText, t: "Document Library", d: "Upload official documents; they are chunked, embedded and searchable." },
-    { i: BarChart3, t: "Analytics", d: "Track most-searched topics, usage trends and policy references." },
-    { i: Zap, t: "Decision Support", d: "Recommendations, risks and next steps drawn from official sources." },
-
+    {
+      i: Search,
+      t: "AI Semantic Search",
+      d: "Natural-language search across every GR, circular and notification.",
+    },
+    {
+      i: ShieldCheck,
+      t: "Grounded, Cited Answers",
+      d: "Every answer shows source document, passage and confidence score.",
+    },
+    {
+      i: GitCompareArrows,
+      t: "Document Comparison",
+      d: "Diff two GRs — added, removed, modified — in a visual table.",
+    },
+    {
+      i: FileText,
+      t: "Document Library",
+      d: "Upload official documents; they are chunked, embedded and searchable.",
+    },
+    {
+      i: BarChart3,
+      t: "Analytics",
+      d: "Track most-searched topics, usage trends and policy references.",
+    },
+    {
+      i: Zap,
+      t: "Decision Support",
+      d: "Recommendations, risks and next steps drawn from official sources.",
+    },
   ];
   return (
     <section id="features" className="mx-auto max-w-7xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-4xl font-bold">Built for administrative decisions.</h2>
         <p className="mt-4 text-muted-foreground">
-          Not a chatbot. A decision-support platform that reads, cites and reasons over official documents.
+          Not a chatbot. A decision-support platform that reads, cites and reasons over official
+          documents.
         </p>
       </div>
       <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {items.map((f) => (
-          <div key={f.t} className="group rounded-2xl border bg-card p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated">
+          <div
+            key={f.t}
+            className="group rounded-2xl border bg-card p-6 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+          >
             <div className="grid h-10 w-10 place-items-center rounded-lg gradient-primary text-primary-foreground shadow-elevated">
               <f.i className="h-5 w-5" />
             </div>
@@ -225,12 +261,16 @@ function Benefits() {
         <div>
           <h2 className="text-4xl font-bold">Why teams choose HTE Copilot</h2>
           <p className="mt-4 text-muted-foreground">
-            Designed with the discipline of a Stripe dashboard and the intelligence of a modern research assistant.
+            Designed with the discipline of a Stripe dashboard and the intelligence of a modern
+            research assistant.
           </p>
         </div>
         <ul className="grid gap-3">
           {items.map((b) => (
-            <li key={b} className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-card">
+            <li
+              key={b}
+              className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-card"
+            >
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
               <span className="text-sm">{b}</span>
             </li>
@@ -243,9 +283,18 @@ function Benefits() {
 
 function Testimonials() {
   const quotes = [
-    { q: "We answered a legislative query in 90 seconds. It used to take a full day.", n: "Deputy Secretary, HTE" },
-    { q: "The comparison view caught three clause changes our team had missed.", n: "Joint Director, DTE" },
-    { q: "Faculty finally have one place to check scholarship eligibility.", n: "Principal, Govt. Polytechnic" },
+    {
+      q: "We answered a legislative query in 90 seconds. It used to take a full day.",
+      n: "Deputy Secretary, HTE",
+    },
+    {
+      q: "The comparison view caught three clause changes our team had missed.",
+      n: "Joint Director, DTE",
+    },
+    {
+      q: "Faculty finally have one place to check scholarship eligibility.",
+      n: "Principal, Govt. Polytechnic",
+    },
   ];
   return (
     <section className="border-y bg-muted/30 py-24">
@@ -266,12 +315,24 @@ function Testimonials() {
 }
 
 function TechStack() {
-  const tech = ["React", "TypeScript", "Tailwind CSS", "FastAPI", "RAG", "FAISS", "Gemini", "Whisper", "PyMuPDF"];
+  const tech = [
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "FastAPI",
+    "RAG",
+    "FAISS",
+    "Gemini",
+    "Whisper",
+    "PyMuPDF",
+  ];
   return (
     <section id="tech" className="mx-auto max-w-7xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-4xl font-bold">Built on a modern AI stack</h2>
-        <p className="mt-3 text-muted-foreground">Hybrid retrieval, grounded generation, speech &amp; translation — all production ready.</p>
+        <p className="mt-3 text-muted-foreground">
+          Hybrid retrieval, grounded generation, speech &amp; translation — all production ready.
+        </p>
       </div>
       <div className="mt-10 flex flex-wrap justify-center gap-2">
         {tech.map((t) => (
@@ -290,7 +351,6 @@ function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-10 text-xs text-muted-foreground md:flex-row">
         <div>© {new Date().getFullYear()} Maharashtra HTE Department. All rights reserved.</div>
         <div>Grounded on official Government Resolutions, circulars and policies.</div>
-
       </div>
     </footer>
   );

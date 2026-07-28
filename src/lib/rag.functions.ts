@@ -165,7 +165,6 @@ export const ragSearch = createServerFn({ method: "POST" })
       };
     }
 
-
     const docIds = Array.from(new Set(chunks.map((c) => c.document_id)));
     const { data: docs } = await supabaseAdmin
       .from("rag_documents")
@@ -226,7 +225,10 @@ Respond with STRICT JSON only (no markdown fences), matching:
     let keyPoints: string[] = [];
     let decisionSupport: Decision | null = null;
     try {
-      const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      const cleaned = raw
+        .replace(/^```(?:json)?/i, "")
+        .replace(/```$/, "")
+        .trim();
       const start = cleaned.indexOf("{");
       const end = cleaned.lastIndexOf("}");
       const parsed = JSON.parse(cleaned.slice(start, end + 1)) as {
@@ -328,7 +330,10 @@ export const summarizeDocument = createServerFn({ method: "POST" })
       .order("chunk_index", { ascending: true })
       .limit(10);
     if (error) throw new Error(error.message);
-    const text = (chunks ?? []).map((c) => c.content).join("\n\n").slice(0, 24_000);
+    const text = (chunks ?? [])
+      .map((c) => c.content)
+      .join("\n\n")
+      .slice(0, 24_000);
     if (!text) throw new Error("No content to summarize");
 
     const res = await fetch(`${GATEWAY}/chat/completions`, {
@@ -353,4 +358,3 @@ export const summarizeDocument = createServerFn({ method: "POST" })
       summary: json.choices?.[0]?.message?.content ?? "No summary generated.",
     };
   });
-

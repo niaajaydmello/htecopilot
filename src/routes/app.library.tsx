@@ -5,8 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Filter,
-  BookmarkPlus,
-  Download,
   Sparkles,
   FileText,
   Upload,
@@ -38,7 +36,6 @@ import {
 
 const TYPES: DocType[] = ["GR", "Circular", "Notification", "Policy", "Scheme"];
 
-
 export const Route = createFileRoute("/app/library")({
   head: () => ({
     meta: [
@@ -57,7 +54,6 @@ function Library() {
     doc: HteDoc;
     mode: "preview" | "summary";
   } | null>(null);
-
 
   const years = Array.from(new Set(documents.map((d) => d.year))).sort((a, b) => b - a);
 
@@ -85,7 +81,12 @@ function Library() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, number, tag…" className="pl-9" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search title, number, tag…"
+              className="pl-9"
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -97,7 +98,12 @@ function Library() {
           <div className="flex flex-wrap items-center gap-2">
             <FilterChip label="All years" active={year === "All"} onClick={() => setYear("All")} />
             {years.map((y) => (
-              <FilterChip key={y} label={String(y)} active={year === y} onClick={() => setYear(y)} />
+              <FilterChip
+                key={y}
+                label={String(y)}
+                active={year === y}
+                onClick={() => setYear(y)}
+              />
             ))}
           </div>
         </div>
@@ -109,17 +115,25 @@ function Library() {
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (
-            <article key={d.id} className="group flex flex-col rounded-2xl border bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated">
+            <article
+              key={d.id}
+              className="group flex flex-col rounded-2xl border bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+            >
               <div className="flex items-start justify-between gap-2">
                 <Badge variant="secondary">{d.type}</Badge>
                 <span className="text-xs text-muted-foreground">{d.date}</span>
               </div>
               <h3 className="mt-3 line-clamp-2 text-base font-semibold">{d.title}</h3>
-              <div className="mt-1 text-xs text-muted-foreground">{d.number} · {d.pages}p</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {d.number} · {d.pages}p
+              </div>
               <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{d.summary}</p>
               <div className="mt-3 flex flex-wrap gap-1">
                 {d.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent-foreground/80">
+                  <span
+                    key={t}
+                    className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent-foreground/80"
+                  >
                     {t}
                   </span>
                 ))}
@@ -141,7 +155,6 @@ function Library() {
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Summary
                 </Button>
               </div>
-
             </article>
           ))}
         </div>
@@ -187,7 +200,9 @@ function Library() {
                   </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
                     <li>• Applies to: {catalogueDoc.doc.department}</li>
-                    <li>• Issued on {catalogueDoc.doc.date} ({catalogueDoc.doc.year})</li>
+                    <li>
+                      • Issued on {catalogueDoc.doc.date} ({catalogueDoc.doc.year})
+                    </li>
                     <li>• Key themes: {catalogueDoc.doc.tags.join(", ")}</li>
                   </ul>
                   <p className="text-xs text-muted-foreground">
@@ -212,7 +227,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
 
 function UploadPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -373,7 +387,6 @@ function IngestedList() {
     }
   };
 
-
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-card">
       <div className="mb-4 flex items-center gap-2">
@@ -400,7 +413,8 @@ function IngestedList() {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{d.title}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {d.filename ?? "—"} · {d.chunk_count} chunks · {d.char_count.toLocaleString()} chars
+                  {d.filename ?? "—"} · {d.chunk_count} chunks · {d.char_count.toLocaleString()}{" "}
+                  chars
                 </div>
               </div>
               <Badge variant="outline">{d.doc_type}</Badge>
@@ -472,8 +486,15 @@ function IngestedList() {
   );
 }
 
-
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}

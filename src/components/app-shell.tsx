@@ -5,7 +5,6 @@ import {
   FolderOpen,
   GitCompareArrows,
   BarChart3,
-
   Star,
   Settings,
   Sparkles,
@@ -36,13 +35,11 @@ const nav: NavItem[] = [
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
 
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [quick, setQuick] = useState("");
   const [dark, setDark] = useState(false);
-
 
   useEffect(() => {
     const stored = typeof window !== "undefined" && localStorage.getItem("hte-theme");
@@ -94,7 +91,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="border-t p-3">
           <div className="flex items-center gap-3 rounded-lg p-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-accent text-accent-foreground text-xs">RS</AvatarFallback>
+              <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                RS
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 leading-tight">
               <div className="text-sm font-medium">R. Shinde</div>

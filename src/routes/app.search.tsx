@@ -28,7 +28,6 @@ import { toast } from "sonner";
 import { exampleQueries, suggestedQuestions } from "@/lib/hte-data";
 import { ragSearch, listIngestedDocuments } from "@/lib/rag.functions";
 
-
 const searchSchema = z.object({ q: z.string().optional() });
 
 export const Route = createFileRoute("/app/search")({
@@ -78,11 +77,9 @@ function SearchPage() {
   askRef.current = ask;
   useEffect(() => {
     if (q && q.trim()) askRef.current(q);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
   const docCount = docs?.length ?? 0;
-
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -91,12 +88,7 @@ function SearchPage() {
       )}
       {loading && <Loading query={askedQuery} docCount={docCount} />}
       {answer && (
-        <AnswerPanel
-          query={askedQuery}
-          a={answer}
-          onAsk={ask}
-          onReset={() => setAnswer(null)}
-        />
+        <AnswerPanel query={askedQuery} a={answer} onAsk={ask} onReset={() => setAnswer(null)} />
       )}
     </div>
   );
@@ -150,7 +142,6 @@ function Hero({
               </Button>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -299,11 +290,7 @@ function AnswerPanel({
                   title="Considerations"
                   items={a.decisionSupport.considerations}
                 />
-                <DecisionList
-                  icon={AlertTriangle}
-                  title="Risks"
-                  items={a.decisionSupport.risks}
-                />
+                <DecisionList icon={AlertTriangle} title="Risks" items={a.decisionSupport.risks} />
                 <DecisionList
                   icon={ListChecks}
                   title="Next steps"
@@ -330,7 +317,9 @@ function AnswerPanel({
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline">{r.type}</Badge>
                         {r.filename && <span className="truncate">{r.filename}</span>}
-                        <span>· {r.passages} passage{r.passages === 1 ? "" : "s"} cited</span>
+                        <span>
+                          · {r.passages} passage{r.passages === 1 ? "" : "s"} cited
+                        </span>
                         <span>· relevance {Math.round(r.topSimilarity * 100)}%</span>
                       </div>
                     </div>
@@ -347,21 +336,20 @@ function AnswerPanel({
             </section>
           )}
 
-
-
           {a.sources.length > 0 && (
             <section className="rounded-2xl border bg-card p-6 shadow-card">
               <h3 className="text-sm font-semibold">Retrieved passages</h3>
               <div className="mt-3 space-y-3">
                 {a.sources.map((s) => (
-                  <div key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                  <div
+                    key={`${s.docId}-${s.chunkIndex}`}
+                    className="rounded-lg border bg-background/60 p-3"
+                  >
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="secondary">[{s.index}]</Badge>
                       <Badge variant="outline">{s.type}</Badge>
                       <span className="truncate">{s.title}</span>
-                      <span className="ml-auto">
-                        sim {Math.round(s.similarity * 100)}%
-                      </span>
+                      <span className="ml-auto">sim {Math.round(s.similarity * 100)}%</span>
                     </div>
                     <p className="mt-2 line-clamp-4 text-xs italic text-foreground/80">
                       &ldquo;{s.excerpt}&rdquo;
@@ -399,7 +387,10 @@ function AnswerPanel({
             ) : (
               <ul className="space-y-3">
                 {a.sources.map((s) => (
-                  <li key={`${s.docId}-${s.chunkIndex}`} className="rounded-lg border bg-background/60 p-3">
+                  <li
+                    key={`${s.docId}-${s.chunkIndex}`}
+                    className="rounded-lg border bg-background/60 p-3"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
