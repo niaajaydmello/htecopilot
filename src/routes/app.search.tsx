@@ -347,12 +347,26 @@ function AnswerPanel({
                       <div className="truncate text-sm font-medium">{r.title}</div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline">{r.type}</Badge>
+                        {r.grNumber && <Badge variant="secondary">GR {r.grNumber}</Badge>}
+                        {r.department && <span className="truncate">{r.department}</span>}
                         {r.filename && <span className="truncate">{r.filename}</span>}
+                        {r.pages.length > 0 && (
+                          <span>
+                            · page{r.pages.length === 1 ? "" : "s"} {r.pages.join(", ")}
+                          </span>
+                        )}
                         <span>
                           · {r.passages} passage{r.passages === 1 ? "" : "s"} cited
                         </span>
                         <span>· relevance {Math.round(r.topSimilarity * 100)}%</span>
                       </div>
+                      <RouterLink
+                        to="/app/library"
+                        search={{ doc: r.docId }}
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-accent hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Open document
+                      </RouterLink>
                     </div>
                     <div className="flex shrink-0 gap-1">
                       {r.citations.map((c) => (
@@ -361,6 +375,7 @@ function AnswerPanel({
                         </Badge>
                       ))}
                     </div>
+
                   </li>
                 ))}
               </ol>
