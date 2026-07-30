@@ -362,11 +362,11 @@ function AnswerPanel({
                       </div>
                       <RouterLink
                         to="/app/library"
-                        search={{ doc: r.docId }}
                         className="mt-2 inline-flex items-center gap-1 text-xs text-accent hover:underline"
                       >
                         <ExternalLink className="h-3 w-3" /> Open document
                       </RouterLink>
+
                     </div>
                     <div className="flex shrink-0 gap-1">
                       {r.citations.map((c) => (
