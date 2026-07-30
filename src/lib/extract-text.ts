@@ -108,7 +108,7 @@ export async function extractDocument(
 
   if (name.endsWith(".docx")) {
     report("Extracting text from Word document…");
-    const mammoth = await import("mammoth/mammoth.browser");
+    const mammoth = await import("mammoth/mammoth.browser" as string);
     const buf = await file.arrayBuffer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await (mammoth as any).extractRawText({ arrayBuffer: buf });
