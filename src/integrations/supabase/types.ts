@@ -22,6 +22,7 @@ export type Database = {
           document_id: string
           embedding: string
           id: string
+          page_number: number | null
         }
         Insert: {
           chunk_index: number
@@ -30,6 +31,7 @@ export type Database = {
           document_id: string
           embedding: string
           id?: string
+          page_number?: number | null
         }
         Update: {
           chunk_index?: number
@@ -38,6 +40,7 @@ export type Database = {
           document_id?: string
           embedding?: string
           id?: string
+          page_number?: number | null
         }
         Relationships: [
           {
@@ -51,30 +54,63 @@ export type Database = {
       }
       rag_documents: {
         Row: {
+          ai_ready: boolean
+          ai_summary: string | null
+          category: string | null
           char_count: number
           chunk_count: number
           created_at: string
+          department: string | null
+          doc_date: string | null
           doc_type: string
+          embedding_status: string
+          extraction_method: string
           filename: string | null
+          gr_number: string | null
           id: string
+          language: string | null
+          page_count: number
+          processing_status: string
           title: string
         }
         Insert: {
+          ai_ready?: boolean
+          ai_summary?: string | null
+          category?: string | null
           char_count?: number
           chunk_count?: number
           created_at?: string
+          department?: string | null
+          doc_date?: string | null
           doc_type?: string
+          embedding_status?: string
+          extraction_method?: string
           filename?: string | null
+          gr_number?: string | null
           id?: string
+          language?: string | null
+          page_count?: number
+          processing_status?: string
           title: string
         }
         Update: {
+          ai_ready?: boolean
+          ai_summary?: string | null
+          category?: string | null
           char_count?: number
           chunk_count?: number
           created_at?: string
+          department?: string | null
+          doc_date?: string | null
           doc_type?: string
+          embedding_status?: string
+          extraction_method?: string
           filename?: string | null
+          gr_number?: string | null
           id?: string
+          language?: string | null
+          page_count?: number
+          processing_status?: string
           title?: string
         }
         Relationships: []
@@ -91,6 +127,7 @@ export type Database = {
           content: string
           document_id: string
           id: string
+          page_number: number
           similarity: number
         }[]
       }

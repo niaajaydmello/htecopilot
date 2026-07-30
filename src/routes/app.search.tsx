@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -220,6 +220,36 @@ function AnswerPanel({
   onAsk: (q: string) => void;
   onReset: () => void;
 }) {
+  if (a.status !== "answered") {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground">Your question</div>
+            <h1 className="text-2xl font-semibold">{query}</h1>
+          </div>
+          <Button variant="outline" size="sm" onClick={onReset}>
+            <Search className="mr-1.5 h-4 w-4" /> New search
+          </Button>
+        </div>
+        <section className="rounded-2xl border border-dashed bg-card p-8 text-center shadow-card">
+          <AlertTriangle className="mx-auto h-6 w-6 text-accent" />
+          <h2 className="mt-3 text-lg font-semibold">
+            {a.status === "no_documents"
+              ? "No indexed documents"
+              : "No grounded answer available"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{a.answer}</p>
+          <Button asChild variant="outline" size="sm" className="mt-4">
+            <RouterLink to="/app/library">
+              <Library className="mr-1.5 h-4 w-4" /> Open Knowledge Repository
+            </RouterLink>
+          </Button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -248,6 +278,7 @@ function AnswerPanel({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+
         <div className="space-y-6 lg:col-span-2">
           <section className="rounded-2xl border bg-card p-6 shadow-card">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
@@ -316,12 +347,26 @@ function AnswerPanel({
                       <div className="truncate text-sm font-medium">{r.title}</div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline">{r.type}</Badge>
+                        {r.grNumber && <Badge variant="secondary">GR {r.grNumber}</Badge>}
+                        {r.department && <span className="truncate">{r.department}</span>}
                         {r.filename && <span className="truncate">{r.filename}</span>}
+                        {r.pages.length > 0 && (
+                          <span>
+                            · page{r.pages.length === 1 ? "" : "s"} {r.pages.join(", ")}
+                          </span>
+                        )}
                         <span>
                           · {r.passages} passage{r.passages === 1 ? "" : "s"} cited
                         </span>
                         <span>· relevance {Math.round(r.topSimilarity * 100)}%</span>
                       </div>
+                      <RouterLink
+                        to="/app/library"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-accent hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Open document
+                      </RouterLink>
+
                     </div>
                     <div className="flex shrink-0 gap-1">
                       {r.citations.map((c) => (
@@ -330,6 +375,7 @@ function AnswerPanel({
                         </Badge>
                       ))}
                     </div>
+
                   </li>
                 ))}
               </ol>
@@ -345,12 +391,15 @@ function AnswerPanel({
                     key={`${s.docId}-${s.chunkIndex}`}
                     className="rounded-lg border bg-background/60 p-3"
                   >
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="secondary">[{s.index}]</Badge>
                       <Badge variant="outline">{s.type}</Badge>
                       <span className="truncate">{s.title}</span>
-                      <span className="ml-auto">sim {Math.round(s.similarity * 100)}%</span>
+                      {s.grNumber && <span>· GR {s.grNumber}</span>}
+                      {s.page && <span>· p. {s.page}</span>}
+                      <span className="ml-auto">relevance {Math.round(s.similarity * 100)}%</span>
                     </div>
+
                     <p className="mt-2 line-clamp-4 text-xs italic text-foreground/80">
                       &ldquo;{s.excerpt}&rdquo;
                     </p>
