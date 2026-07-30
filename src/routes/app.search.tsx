@@ -391,12 +391,15 @@ function AnswerPanel({
                     key={`${s.docId}-${s.chunkIndex}`}
                     className="rounded-lg border bg-background/60 p-3"
                   >
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="secondary">[{s.index}]</Badge>
                       <Badge variant="outline">{s.type}</Badge>
                       <span className="truncate">{s.title}</span>
-                      <span className="ml-auto">sim {Math.round(s.similarity * 100)}%</span>
+                      {s.grNumber && <span>· GR {s.grNumber}</span>}
+                      {s.page && <span>· p. {s.page}</span>}
+                      <span className="ml-auto">relevance {Math.round(s.similarity * 100)}%</span>
                     </div>
+
                     <p className="mt-2 line-clamp-4 text-xs italic text-foreground/80">
                       &ldquo;{s.excerpt}&rdquo;
                     </p>
