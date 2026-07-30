@@ -220,6 +220,36 @@ function AnswerPanel({
   onAsk: (q: string) => void;
   onReset: () => void;
 }) {
+  if (a.status !== "answered") {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground">Your question</div>
+            <h1 className="text-2xl font-semibold">{query}</h1>
+          </div>
+          <Button variant="outline" size="sm" onClick={onReset}>
+            <Search className="mr-1.5 h-4 w-4" /> New search
+          </Button>
+        </div>
+        <section className="rounded-2xl border border-dashed bg-card p-8 text-center shadow-card">
+          <AlertTriangle className="mx-auto h-6 w-6 text-accent" />
+          <h2 className="mt-3 text-lg font-semibold">
+            {a.status === "no_documents"
+              ? "No indexed documents"
+              : "No grounded answer available"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{a.answer}</p>
+          <Button asChild variant="outline" size="sm" className="mt-4">
+            <RouterLink to="/app/library">
+              <Library className="mr-1.5 h-4 w-4" /> Open Knowledge Repository
+            </RouterLink>
+          </Button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -248,6 +278,7 @@ function AnswerPanel({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+
         <div className="space-y-6 lg:col-span-2">
           <section className="rounded-2xl border bg-card p-6 shadow-card">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent">
