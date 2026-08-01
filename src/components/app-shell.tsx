@@ -8,7 +8,6 @@ import {
   Star,
   Settings,
   Sparkles,
-  Bell,
   Sun,
   Moon,
 } from "lucide-react";
@@ -132,9 +131,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Badge>
             <Button size="icon" variant="ghost" onClick={toggleTheme} aria-label="Toggle theme">
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button size="icon" variant="ghost" aria-label="Notifications">
-              <Bell className="h-4 w-4" />
             </Button>
           </div>
         </header>
