@@ -8,7 +8,6 @@ import {
   Star,
   Settings,
   Sparkles,
-  Bell,
   Sun,
   Moon,
 } from "lucide-react";
