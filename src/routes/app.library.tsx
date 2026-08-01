@@ -84,12 +84,16 @@ type PipelineJob = {
   file: string;
   note: string;
   states: Record<StageKey, StageState>;
+  error?: { stage: StageKey; message: string; attempts: number } | null;
+  status: "running" | "done" | "failed";
 };
 
 function newJob(file: string): PipelineJob {
   return {
     file,
     note: "Queued",
+    status: "running",
+    error: null,
     states: {
       extract: "pending",
       ocr: "pending",
@@ -101,6 +105,7 @@ function newJob(file: string): PipelineJob {
     },
   };
 }
+
 
 function Pipeline({ job }: { job: PipelineJob }) {
   return (
