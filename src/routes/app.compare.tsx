@@ -101,12 +101,8 @@ function DocSlot({ label, title, subtitle }: { label: string; title: string; sub
       <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className="mt-1 font-semibold">{title}</div>
       <div className="text-sm text-muted-foreground">{subtitle}</div>
-      <div className="mt-4 flex gap-2">
-        <Button variant="outline" size="sm">
-          <Upload className="mr-1.5 h-4 w-4" /> Replace
-        </Button>
-        <Button variant="ghost" size="sm">Preview</Button>
-      </div>
+    </div>
+
     </div>
   );
 }
