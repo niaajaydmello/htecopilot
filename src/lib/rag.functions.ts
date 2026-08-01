@@ -23,23 +23,55 @@ function chunkPages(pages: string[], size = 1200, overlap = 150): PageChunk[] {
   return chunks;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function gatewayError(status: number, body: string): Error {
+  if (status === 429) return new Error("AI rate limit reached. Please retry in a moment.");
+  if (status === 402) return new Error("AI credits exhausted. Please add credits to continue.");
+  if (status === 403) return new Error("AI access is disabled for this workspace.");
+  return new Error(`AI request failed (${status}): ${body.slice(0, 200)}`);
+}
+
+/** POST to the AI gateway with bounded retries on transient failures (429 / 5xx / network). */
+async function gatewayPost(
+  apiKey: string,
+  path: string,
+  payload: unknown,
+  attempts = 3,
+): Promise<Response> {
+  let lastError: Error = new Error("AI request failed");
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const res = await fetch(`${GATEWAY}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) return res;
+      const body = await res.text();
+      const err = gatewayError(res.status, body);
+      const retryable = res.status === 429 || res.status >= 500;
+      if (!retryable || attempt === attempts - 1) throw err;
+      lastError = err;
+    } catch (e) {
+      // network error or thrown retryable gateway error
+      if (attempt === attempts - 1) throw e instanceof Error ? e : lastError;
+      lastError = e instanceof Error ? e : lastError;
+    }
+    await sleep(800 * 2 ** attempt + Math.random() * 300);
+  }
+  throw lastError;
+}
+
 async function embed(apiKey: string, inputs: string[]): Promise<number[][]> {
   const out: number[][] = [];
   for (let i = 0; i < inputs.length; i += 50) {
     const batch = inputs.slice(i, i + 50);
-    const res = await fetch(`${GATEWAY}/embeddings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-      },
-      body: JSON.stringify({ model: EMBED_MODEL, input: batch }),
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Embedding failed (${res.status}): ${t.slice(0, 200)}`);
-    }
+    const res = await gatewayPost(apiKey, "/embeddings", { model: EMBED_MODEL, input: batch });
     const data = (await res.json()) as { data: { embedding: number[]; index: number }[] };
+    if (!Array.isArray(data.data) || data.data.length !== batch.length) {
+      throw new Error("Embedding response was incomplete — please retry this step.");
+    }
     const sorted = [...data.data].sort((a, b) => a.index - b.index);
     for (const item of sorted) out.push(item.embedding);
   }
@@ -47,26 +79,17 @@ async function embed(apiKey: string, inputs: string[]): Promise<number[][]> {
 }
 
 async function chat(apiKey: string, system: string, user: string): Promise<string> {
-  const res = await fetch(`${GATEWAY}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-    body: JSON.stringify({
-      model: CHAT_MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
+  const res = await gatewayPost(apiKey, "/chat/completions", {
+    model: CHAT_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
   });
-  if (!res.ok) {
-    const t = await res.text();
-    if (res.status === 429) throw new Error("AI rate limit reached. Please retry in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits to continue.");
-    throw new Error(`AI failed (${res.status}): ${t.slice(0, 200)}`);
-  }
   const json = (await res.json()) as { choices: { message: { content: string } }[] };
   return json.choices?.[0]?.message?.content ?? "";
 }
+
 
 function parseJsonLoose<T>(raw: string): T | null {
   try {

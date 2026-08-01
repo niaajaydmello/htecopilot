@@ -20,6 +20,10 @@ import {
   Binary,
   Boxes,
   ShieldCheck,
+  AlertTriangle,
+  RefreshCw,
+  X,
+
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,12 +88,16 @@ type PipelineJob = {
   file: string;
   note: string;
   states: Record<StageKey, StageState>;
+  error?: { stage: StageKey; message: string; attempts: number } | null;
+  status: "running" | "done" | "failed";
 };
 
 function newJob(file: string): PipelineJob {
   return {
     file,
     note: "Queued",
+    status: "running",
+    error: null,
     states: {
       extract: "pending",
       ocr: "pending",
@@ -102,13 +110,29 @@ function newJob(file: string): PipelineJob {
   };
 }
 
-function Pipeline({ job }: { job: PipelineJob }) {
+
+function Pipeline({
+  job,
+  onRetry,
+  onDismiss,
+  retrying,
+}: {
+  job: PipelineJob;
+  onRetry: () => void;
+  onDismiss: () => void;
+  retrying: boolean;
+}) {
+  const failedStage = job.error ? STAGES.find((s) => s.key === job.error!.stage) : null;
   return (
     <div className="rounded-2xl border bg-background/60 p-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Sparkles className="h-4 w-4 text-accent" />
         <span className="truncate">{job.file}</span>
-        <span className="ml-auto text-xs text-muted-foreground">{job.note}</span>
+        <span
+          className={`ml-auto text-xs ${job.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}
+        >
+          {job.note}
+        </span>
       </div>
       <ol className="mt-4 grid gap-2 md:grid-cols-4 lg:grid-cols-7">
         {STAGES.map((s) => {
@@ -132,6 +156,8 @@ function Pipeline({ job }: { job: PipelineJob }) {
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 ) : st === "done" ? (
                   <Check className="h-4 w-4 text-accent" />
+                ) : st === "error" ? (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                 ) : st === "skipped" ? (
                   <CircleDashed className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -142,13 +168,48 @@ function Pipeline({ job }: { job: PipelineJob }) {
               {st === "skipped" && (
                 <div className="text-[10px] text-muted-foreground">not required</div>
               )}
+              {st === "error" && <div className="text-[10px] text-destructive">failed</div>}
             </li>
           );
         })}
       </ol>
+
+      {job.status === "failed" && job.error && (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-destructive">
+                {failedStage?.label ?? "Processing"} failed
+              </div>
+              <p className="mt-1 break-words text-xs text-muted-foreground">
+                {job.error.message}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {job.error.attempts} attempt{job.error.attempts === 1 ? "" : "s"} made · nothing was
+                added to the knowledge base, so retrying is safe.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" onClick={onRetry} disabled={retrying}>
+                  {retrying ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Retry {failedStage ? failedStage.label.toLowerCase() : "processing"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={onDismiss} disabled={retrying}>
+                  <X className="mr-1.5 h-3.5 w-3.5" /> Dismiss
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 /* --------------------------------- page --------------------------------- */
 
@@ -179,6 +240,37 @@ function Library() {
 
 /* ------------------------------ upload panel ----------------------------- */
 
+type Meta = {
+  title: string | null;
+  grNumber: string | null;
+  department: string | null;
+  category: string | null;
+  language: string | null;
+  docDate: string | null;
+  summary: string | null;
+};
+
+const EMPTY_META: Meta = {
+  title: null,
+  grNumber: null,
+  department: null,
+  category: null,
+  language: null,
+  docDate: null,
+  summary: null,
+};
+
+type Cache = {
+  extracted?: Awaited<ReturnType<typeof extractDocument>>;
+  meta?: Meta;
+  attempts: number;
+};
+
+function messageOf(e: unknown, fallback: string) {
+  if (e instanceof Error && e.message) return e.message;
+  return fallback;
+}
+
 function UploadPanel({
   job,
   setJob,
@@ -189,89 +281,143 @@ function UploadPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const pending = useRef<{ file: File; cache: Cache } | null>(null);
   const ingest = useServerFn(ingestDocument);
   const getMeta = useServerFn(extractMetadata);
   const qc = useQueryClient();
 
+  const runPipeline = async (file: File, cache: Cache) => {
+    let current = newJob(file.name);
+    const update = (
+      patch: Partial<Record<StageKey, StageState>>,
+      note?: string,
+      extra?: Partial<PipelineJob>,
+    ) => {
+      current = {
+        ...current,
+        note: note ?? current.note,
+        states: { ...current.states, ...patch },
+        ...extra,
+      };
+      setJob(current);
+    };
+    const fail = (stage: StageKey, e: unknown, fallback: string) => {
+      const message = messageOf(e, fallback);
+      pending.current = { file, cache };
+      update({ [stage]: "error" } as Partial<Record<StageKey, StageState>>, "Failed", {
+        status: "failed",
+        error: { stage, message, attempts: cache.attempts },
+      });
+      toast.error(`${file.name}: ${message}`);
+    };
+
+    setJob(current);
+    cache.attempts += 1;
+
+    // 1) extraction + OCR
+    if (!cache.extracted) {
+      try {
+        update({ extract: "active" }, "Extracting text…");
+        cache.extracted = await extractDocument(file, (m) => update({}, m));
+      } catch (e) {
+        fail("extract", e, "Text extraction failed");
+        return false;
+      }
+    }
+    const extracted = cache.extracted;
+    if (extracted.method === "ocr") update({ extract: "done", ocr: "done" }, "OCR complete");
+    else update({ extract: "done", ocr: "skipped" }, "Text extracted");
+
+    const fullText = extracted.pages.join("\n\n");
+    if (fullText.trim().length < 20) {
+      cache.extracted = undefined; // force a fresh extraction/OCR pass on retry
+      fail(
+        extracted.method === "ocr" ? "ocr" : "extract",
+        new Error(
+          "No readable text could be recovered from this file. Retry, or upload a higher-quality scan.",
+        ),
+        "No readable text found",
+      );
+      return false;
+    }
+
+    // 2) metadata (best-effort, never blocks ingestion)
+    if (!cache.meta) {
+      update({ metadata: "active" }, "Extracting metadata…");
+      try {
+        cache.meta = await getMeta({ data: { text: fullText.slice(0, 20_000) } });
+        update({ metadata: "done" }, "Metadata extracted");
+      } catch {
+        cache.meta = EMPTY_META;
+        update({ metadata: "skipped" }, "Metadata unavailable — continuing");
+      }
+    } else {
+      update({ metadata: "done" }, "Metadata reused");
+    }
+    const meta = cache.meta ?? EMPTY_META;
+
+    // 3) chunk + embed + index
+    update({ chunk: "active" }, "Chunking…");
+    const usedTitle = title.trim() || meta.title || file.name.replace(/\.[^.]+$/, "");
+    update({ chunk: "done", embed: "active" }, "Generating embeddings…");
+
+    try {
+      const res = await ingest({
+        data: {
+          title: usedTitle,
+          docType: meta.category ?? "Uploaded",
+          filename: file.name,
+          pages: extracted.pages,
+          pageCount: extracted.pageCount,
+          extractionMethod: extracted.method,
+          grNumber: meta.grNumber,
+          department: meta.department,
+          category: meta.category,
+          language: meta.language,
+          docDate: meta.docDate,
+          summary: meta.summary,
+        },
+      });
+      update({ embed: "done", index: "done", ready: "done" }, `Indexed ${res.chunks} chunks`, {
+        status: "done",
+        error: null,
+      });
+      toast.success(`"${usedTitle}" is ready for AI Search — ${res.chunks} chunks indexed`);
+      pending.current = null;
+      setTitle("");
+      qc.invalidateQueries({ queryKey: ["ingested-docs"] });
+      return true;
+    } catch (e) {
+      fail("embed", e, "Embedding or indexing failed");
+      return false;
+    }
+  };
+
   const onFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setBusy(true);
+    pending.current = null;
     for (const file of Array.from(files)) {
-      let current = newJob(file.name);
-      const update = (patch: Partial<Record<StageKey, StageState>>, note?: string) => {
-        current = {
-          ...current,
-          note: note ?? current.note,
-          states: { ...current.states, ...patch },
-        };
-        setJob(current);
-      };
-      setJob(current);
-      try {
-        update({ extract: "active" }, "Extracting text…");
-        const extracted = await extractDocument(file, (m) => update({}, m));
-        if (extracted.method === "ocr") {
-          update({ extract: "done", ocr: "done" }, "OCR complete");
-        } else {
-          update({ extract: "done", ocr: "skipped" }, "Text extracted");
-        }
-        const fullText = extracted.pages.join("\n\n");
-        if (fullText.trim().length < 20) {
-          update({ metadata: "error" }, "No readable text found");
-          toast.error(`${file.name}: no readable text found`);
-          continue;
-        }
-
-        update({ metadata: "active" }, "Extracting metadata…");
-        let meta = {
-          title: null as string | null,
-          grNumber: null as string | null,
-          department: null as string | null,
-          category: null as string | null,
-          language: null as string | null,
-          docDate: null as string | null,
-          summary: null as string | null,
-        };
-        try {
-          meta = await getMeta({ data: { text: fullText.slice(0, 20_000) } });
-        } catch {
-          /* metadata is best-effort */
-        }
-        update({ metadata: "done" }, "Metadata extracted");
-
-        update({ chunk: "active" }, "Chunking…");
-        const usedTitle = title.trim() || meta.title || file.name.replace(/\.[^.]+$/, "");
-        update({ chunk: "done", embed: "active" }, "Generating embeddings…");
-
-        const res = await ingest({
-          data: {
-            title: usedTitle,
-            docType: meta.category ?? "Uploaded",
-            filename: file.name,
-            pages: extracted.pages,
-            pageCount: extracted.pageCount,
-            extractionMethod: extracted.method,
-            grNumber: meta.grNumber,
-            department: meta.department,
-            category: meta.category,
-            language: meta.language,
-            docDate: meta.docDate,
-            summary: meta.summary,
-          },
-        });
-
-        update({ embed: "done", index: "done", ready: "done" }, `Indexed ${res.chunks} chunks`);
-        toast.success(`"${usedTitle}" is ready for AI Search — ${res.chunks} chunks indexed`);
-        setTitle("");
-        qc.invalidateQueries({ queryKey: ["ingested-docs"] });
-      } catch (e) {
-        update({ embed: "error" }, e instanceof Error ? e.message : "Failed");
-        toast.error(e instanceof Error ? e.message : `Failed to ingest ${file.name}`);
-      }
+      await runPipeline(file, { attempts: 0 });
     }
     setBusy(false);
     if (inputRef.current) inputRef.current.value = "";
   };
+
+  const onRetry = async () => {
+    const item = pending.current;
+    if (!item) return;
+    setRetrying(true);
+    await runPipeline(item.file, item.cache);
+    setRetrying(false);
+  };
+
+  const onDismiss = () => {
+    pending.current = null;
+    setJob(null);
+  };
+
 
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-card">
@@ -323,7 +469,7 @@ function UploadPanel({
 
       {job && (
         <div className="mt-5">
-          <Pipeline job={job} />
+          <Pipeline job={job} onRetry={onRetry} onDismiss={onDismiss} retrying={retrying} />
         </div>
       )}
     </section>
