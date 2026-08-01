@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GitCompareArrows, Plus, Minus, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { comparisonRows } from "@/lib/hte-data";
 
 export const Route = createFileRoute("/app/compare")({
