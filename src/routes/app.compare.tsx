@@ -103,6 +103,5 @@ function DocSlot({ label, title, subtitle }: { label: string; title: string; sub
       <div className="text-sm text-muted-foreground">{subtitle}</div>
     </div>
 
-    </div>
   );
 }

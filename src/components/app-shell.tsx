@@ -133,9 +133,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button size="icon" variant="ghost" onClick={toggleTheme} aria-label="Toggle theme">
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button size="icon" variant="ghost" aria-label="Notifications">
-              <Bell className="h-4 w-4" />
-            </Button>
           </div>
         </header>
         <main className="min-w-0 flex-1 p-6 md:p-8">{children}</main>
