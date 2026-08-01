@@ -469,7 +469,7 @@ function UploadPanel({
 
       {job && (
         <div className="mt-5">
-          <Pipeline job={job} />
+          <Pipeline job={job} onRetry={onRetry} onDismiss={onDismiss} retrying={retrying} />
         </div>
       )}
     </section>
