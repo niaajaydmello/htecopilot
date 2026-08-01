@@ -107,13 +107,28 @@ function newJob(file: string): PipelineJob {
 }
 
 
-function Pipeline({ job }: { job: PipelineJob }) {
+function Pipeline({
+  job,
+  onRetry,
+  onDismiss,
+  retrying,
+}: {
+  job: PipelineJob;
+  onRetry: () => void;
+  onDismiss: () => void;
+  retrying: boolean;
+}) {
+  const failedStage = job.error ? STAGES.find((s) => s.key === job.error!.stage) : null;
   return (
     <div className="rounded-2xl border bg-background/60 p-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Sparkles className="h-4 w-4 text-accent" />
         <span className="truncate">{job.file}</span>
-        <span className="ml-auto text-xs text-muted-foreground">{job.note}</span>
+        <span
+          className={`ml-auto text-xs ${job.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}
+        >
+          {job.note}
+        </span>
       </div>
       <ol className="mt-4 grid gap-2 md:grid-cols-4 lg:grid-cols-7">
         {STAGES.map((s) => {
@@ -137,6 +152,8 @@ function Pipeline({ job }: { job: PipelineJob }) {
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 ) : st === "done" ? (
                   <Check className="h-4 w-4 text-accent" />
+                ) : st === "error" ? (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                 ) : st === "skipped" ? (
                   <CircleDashed className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -147,13 +164,48 @@ function Pipeline({ job }: { job: PipelineJob }) {
               {st === "skipped" && (
                 <div className="text-[10px] text-muted-foreground">not required</div>
               )}
+              {st === "error" && <div className="text-[10px] text-destructive">failed</div>}
             </li>
           );
         })}
       </ol>
+
+      {job.status === "failed" && job.error && (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-destructive">
+                {failedStage?.label ?? "Processing"} failed
+              </div>
+              <p className="mt-1 break-words text-xs text-muted-foreground">
+                {job.error.message}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {job.error.attempts} attempt{job.error.attempts === 1 ? "" : "s"} made · nothing was
+                added to the knowledge base, so retrying is safe.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" onClick={onRetry} disabled={retrying}>
+                  {retrying ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Retry {failedStage ? failedStage.label.toLowerCase() : "processing"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={onDismiss} disabled={retrying}>
+                  <X className="mr-1.5 h-3.5 w-3.5" /> Dismiss
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 /* --------------------------------- page --------------------------------- */
 
