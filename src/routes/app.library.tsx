@@ -236,6 +236,37 @@ function Library() {
 
 /* ------------------------------ upload panel ----------------------------- */
 
+type Meta = {
+  title: string | null;
+  grNumber: string | null;
+  department: string | null;
+  category: string | null;
+  language: string | null;
+  docDate: string | null;
+  summary: string | null;
+};
+
+const EMPTY_META: Meta = {
+  title: null,
+  grNumber: null,
+  department: null,
+  category: null,
+  language: null,
+  docDate: null,
+  summary: null,
+};
+
+type Cache = {
+  extracted?: Awaited<ReturnType<typeof extractDocument>>;
+  meta?: Meta;
+  attempts: number;
+};
+
+function messageOf(e: unknown, fallback: string) {
+  if (e instanceof Error && e.message) return e.message;
+  return fallback;
+}
+
 function UploadPanel({
   job,
   setJob,
@@ -246,89 +277,143 @@ function UploadPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const pending = useRef<{ file: File; cache: Cache } | null>(null);
   const ingest = useServerFn(ingestDocument);
   const getMeta = useServerFn(extractMetadata);
   const qc = useQueryClient();
 
+  const runPipeline = async (file: File, cache: Cache) => {
+    let current = newJob(file.name);
+    const update = (
+      patch: Partial<Record<StageKey, StageState>>,
+      note?: string,
+      extra?: Partial<PipelineJob>,
+    ) => {
+      current = {
+        ...current,
+        note: note ?? current.note,
+        states: { ...current.states, ...patch },
+        ...extra,
+      };
+      setJob(current);
+    };
+    const fail = (stage: StageKey, e: unknown, fallback: string) => {
+      const message = messageOf(e, fallback);
+      pending.current = { file, cache };
+      update({ [stage]: "error" } as Partial<Record<StageKey, StageState>>, "Failed", {
+        status: "failed",
+        error: { stage, message, attempts: cache.attempts },
+      });
+      toast.error(`${file.name}: ${message}`);
+    };
+
+    setJob(current);
+    cache.attempts += 1;
+
+    // 1) extraction + OCR
+    if (!cache.extracted) {
+      try {
+        update({ extract: "active" }, "Extracting text…");
+        cache.extracted = await extractDocument(file, (m) => update({}, m));
+      } catch (e) {
+        fail("extract", e, "Text extraction failed");
+        return false;
+      }
+    }
+    const extracted = cache.extracted;
+    if (extracted.method === "ocr") update({ extract: "done", ocr: "done" }, "OCR complete");
+    else update({ extract: "done", ocr: "skipped" }, "Text extracted");
+
+    const fullText = extracted.pages.join("\n\n");
+    if (fullText.trim().length < 20) {
+      cache.extracted = undefined; // force a fresh extraction/OCR pass on retry
+      fail(
+        extracted.method === "ocr" ? "ocr" : "extract",
+        new Error(
+          "No readable text could be recovered from this file. Retry, or upload a higher-quality scan.",
+        ),
+        "No readable text found",
+      );
+      return false;
+    }
+
+    // 2) metadata (best-effort, never blocks ingestion)
+    if (!cache.meta) {
+      update({ metadata: "active" }, "Extracting metadata…");
+      try {
+        cache.meta = await getMeta({ data: { text: fullText.slice(0, 20_000) } });
+        update({ metadata: "done" }, "Metadata extracted");
+      } catch {
+        cache.meta = EMPTY_META;
+        update({ metadata: "skipped" }, "Metadata unavailable — continuing");
+      }
+    } else {
+      update({ metadata: "done" }, "Metadata reused");
+    }
+    const meta = cache.meta ?? EMPTY_META;
+
+    // 3) chunk + embed + index
+    update({ chunk: "active" }, "Chunking…");
+    const usedTitle = title.trim() || meta.title || file.name.replace(/\.[^.]+$/, "");
+    update({ chunk: "done", embed: "active" }, "Generating embeddings…");
+
+    try {
+      const res = await ingest({
+        data: {
+          title: usedTitle,
+          docType: meta.category ?? "Uploaded",
+          filename: file.name,
+          pages: extracted.pages,
+          pageCount: extracted.pageCount,
+          extractionMethod: extracted.method,
+          grNumber: meta.grNumber,
+          department: meta.department,
+          category: meta.category,
+          language: meta.language,
+          docDate: meta.docDate,
+          summary: meta.summary,
+        },
+      });
+      update({ embed: "done", index: "done", ready: "done" }, `Indexed ${res.chunks} chunks`, {
+        status: "done",
+        error: null,
+      });
+      toast.success(`"${usedTitle}" is ready for AI Search — ${res.chunks} chunks indexed`);
+      pending.current = null;
+      setTitle("");
+      qc.invalidateQueries({ queryKey: ["ingested-docs"] });
+      return true;
+    } catch (e) {
+      fail("embed", e, "Embedding or indexing failed");
+      return false;
+    }
+  };
+
   const onFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setBusy(true);
+    pending.current = null;
     for (const file of Array.from(files)) {
-      let current = newJob(file.name);
-      const update = (patch: Partial<Record<StageKey, StageState>>, note?: string) => {
-        current = {
-          ...current,
-          note: note ?? current.note,
-          states: { ...current.states, ...patch },
-        };
-        setJob(current);
-      };
-      setJob(current);
-      try {
-        update({ extract: "active" }, "Extracting text…");
-        const extracted = await extractDocument(file, (m) => update({}, m));
-        if (extracted.method === "ocr") {
-          update({ extract: "done", ocr: "done" }, "OCR complete");
-        } else {
-          update({ extract: "done", ocr: "skipped" }, "Text extracted");
-        }
-        const fullText = extracted.pages.join("\n\n");
-        if (fullText.trim().length < 20) {
-          update({ metadata: "error" }, "No readable text found");
-          toast.error(`${file.name}: no readable text found`);
-          continue;
-        }
-
-        update({ metadata: "active" }, "Extracting metadata…");
-        let meta = {
-          title: null as string | null,
-          grNumber: null as string | null,
-          department: null as string | null,
-          category: null as string | null,
-          language: null as string | null,
-          docDate: null as string | null,
-          summary: null as string | null,
-        };
-        try {
-          meta = await getMeta({ data: { text: fullText.slice(0, 20_000) } });
-        } catch {
-          /* metadata is best-effort */
-        }
-        update({ metadata: "done" }, "Metadata extracted");
-
-        update({ chunk: "active" }, "Chunking…");
-        const usedTitle = title.trim() || meta.title || file.name.replace(/\.[^.]+$/, "");
-        update({ chunk: "done", embed: "active" }, "Generating embeddings…");
-
-        const res = await ingest({
-          data: {
-            title: usedTitle,
-            docType: meta.category ?? "Uploaded",
-            filename: file.name,
-            pages: extracted.pages,
-            pageCount: extracted.pageCount,
-            extractionMethod: extracted.method,
-            grNumber: meta.grNumber,
-            department: meta.department,
-            category: meta.category,
-            language: meta.language,
-            docDate: meta.docDate,
-            summary: meta.summary,
-          },
-        });
-
-        update({ embed: "done", index: "done", ready: "done" }, `Indexed ${res.chunks} chunks`);
-        toast.success(`"${usedTitle}" is ready for AI Search — ${res.chunks} chunks indexed`);
-        setTitle("");
-        qc.invalidateQueries({ queryKey: ["ingested-docs"] });
-      } catch (e) {
-        update({ embed: "error" }, e instanceof Error ? e.message : "Failed");
-        toast.error(e instanceof Error ? e.message : `Failed to ingest ${file.name}`);
-      }
+      await runPipeline(file, { attempts: 0 });
     }
     setBusy(false);
     if (inputRef.current) inputRef.current.value = "";
   };
+
+  const onRetry = async () => {
+    const item = pending.current;
+    if (!item) return;
+    setRetrying(true);
+    await runPipeline(item.file, item.cache);
+    setRetrying(false);
+  };
+
+  const onDismiss = () => {
+    pending.current = null;
+    setJob(null);
+  };
+
 
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-card">
