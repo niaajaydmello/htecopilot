@@ -95,14 +95,8 @@ export const discoverPdfs = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const start = normalise(data.url.trim(), "https://example.com");
-    if (!start || !/^https?:\/\//i.test(data.url.trim().startsWith("http") ? data.url.trim() : `https://${data.url.trim()}`)) {
-      // fall through — normalise already validated protocol
-    }
-    const seed = normalise(
-      data.url.trim().startsWith("http") ? data.url.trim() : `https://${data.url.trim()}`,
-      "https://example.com",
-    );
+    const raw = data.url.trim();
+    const seed = normalise(raw.startsWith("http") ? raw : `https://${raw}`, "https://example.com");
     if (!seed) throw new Error("That does not look like a valid website link.");
 
     const origin = new URL(seed).origin;
