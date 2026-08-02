@@ -46,6 +46,7 @@ import {
   summarizeDocument,
   extractMetadata,
 } from "@/lib/rag.functions";
+import { discoverPdfs, fetchRemotePdf } from "@/lib/discover.functions";
 
 export const Route = createFileRoute("/app/library")({
   head: () => ({
