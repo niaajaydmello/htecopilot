@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   RefreshCw,
   X,
-
+  Link2 as LinkIcon,
+  Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
