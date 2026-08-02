@@ -467,12 +467,226 @@ function UploadPanel({
         onChange={(e) => onFiles(e.target.files)}
       />
 
+      <LinkDiscovery
+        busy={busy}
+        onIngest={async (files) => {
+          setBusy(true);
+          pending.current = null;
+          for (const f of files) {
+            await runPipeline(f, { attempts: 0 });
+          }
+          setBusy(false);
+        }}
+      />
+
       {job && (
         <div className="mt-5">
           <Pipeline job={job} onRetry={onRetry} onDismiss={onDismiss} retrying={retrying} />
         </div>
       )}
     </section>
+  );
+}
+
+/* --------------------------- link discovery flow -------------------------- */
+
+const DEPTHS = [
+  { key: "page" as const, label: "This page only", hint: "Fastest — links on the pasted page" },
+  { key: "level" as const, label: "One level deep", hint: "Also follows links on that page" },
+  { key: "site" as const, label: "Full site crawl", hint: "Walks the site (up to 40 pages)" },
+];
+
+type Found = Awaited<ReturnType<typeof discoverPdfs>>;
+
+function LinkDiscovery({
+  busy,
+  onIngest,
+}: {
+  busy: boolean;
+  onIngest: (files: File[]) => Promise<void>;
+}) {
+  const [url, setUrl] = useState("");
+  const [depth, setDepth] = useState<"page" | "level" | "site">("page");
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState<Found | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const discover = useServerFn(discoverPdfs);
+  const fetchPdf = useServerFn(fetchRemotePdf);
+
+  const scan = async () => {
+    if (!url.trim()) return;
+    setScanning(true);
+    setResult(null);
+    setSelected(new Set());
+    try {
+      const res = await discover({ data: { url: url.trim(), depth } });
+      setResult(res);
+      setSelected(new Set(res.pdfs.map((p) => p.url)));
+      if (res.pdfs.length === 0) toast.info("No PDF links were found on that page.");
+      else toast.success(`Found ${res.pdfs.length} PDF${res.pdfs.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not read that website link.");
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const toggle = (u: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(u)) next.delete(u);
+      else next.add(u);
+      return next;
+    });
+
+  const ingestSelected = async () => {
+    if (!result) return;
+    const picks = result.pdfs.filter((p) => selected.has(p.url));
+    if (picks.length === 0) return;
+    const files: File[] = [];
+    for (const p of picks) {
+      setDownloading(p.url);
+      try {
+        const dl = await fetchPdf({ data: { url: p.url } });
+        const bin = atob(dl.base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        files.push(new File([bytes], dl.filename, { type: "application/pdf" }));
+      } catch (e) {
+        toast.error(`${p.title}: ${e instanceof Error ? e.message : "download failed"}`);
+      }
+    }
+    setDownloading(null);
+    if (files.length > 0) await onIngest(files);
+  };
+
+  const disabled = busy || scanning || downloading !== null;
+
+  return (
+    <div className="mt-6 rounded-2xl border bg-background/60 p-5">
+      <div className="flex items-start gap-3">
+        <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
+          <LinkIcon className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">Paste a website link instead</h3>
+          <p className="text-xs text-muted-foreground">
+            We fetch the page, discover every linked PDF, and let you pick which ones to ingest.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+        <Input
+          placeholder="https://www.maharashtra.gov.in/…"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && scan()}
+          disabled={disabled}
+        />
+        <Button onClick={scan} disabled={disabled || !url.trim()} variant="outline">
+          {scanning ? (
+            <>
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Scanning…
+            </>
+          ) : (
+            <>
+              <Globe className="mr-1.5 h-4 w-4" /> Find PDFs
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {DEPTHS.map((d) => (
+          <button
+            key={d.key}
+            type="button"
+            onClick={() => setDepth(d.key)}
+            disabled={disabled}
+            className={`rounded-xl border p-3 text-left transition disabled:opacity-60 ${
+              depth === d.key ? "border-primary/60 bg-primary/10" : "bg-card hover:bg-muted/50"
+            }`}
+          >
+            <div className="text-xs font-medium">{d.label}</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">{d.hint}</div>
+          </button>
+        ))}
+      </div>
+
+      {result && (
+        <div className="mt-4 rounded-xl border bg-card">
+          <div className="flex flex-wrap items-center gap-2 border-b p-3 text-xs text-muted-foreground">
+            <span>
+              {result.pdfs.length} PDF{result.pdfs.length === 1 ? "" : "s"} · {result.pagesCrawled}{" "}
+              page{result.pagesCrawled === 1 ? "" : "s"} scanned
+              {result.truncated ? " · limit reached" : ""}
+            </span>
+            {result.pdfs.length > 0 && (
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={disabled}
+                  onClick={() =>
+                    setSelected(
+                      selected.size === result.pdfs.length
+                        ? new Set()
+                        : new Set(result.pdfs.map((p) => p.url)),
+                    )
+                  }
+                >
+                  {selected.size === result.pdfs.length ? "Clear all" : "Select all"}
+                </Button>
+                <Button
+                  size="sm"
+                  className="gradient-primary"
+                  disabled={disabled || selected.size === 0}
+                  onClick={ingestSelected}
+                >
+                  {downloading ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Ingest {selected.size} selected
+                </Button>
+              </div>
+            )}
+          </div>
+          <ul className="max-h-72 divide-y overflow-y-auto">
+            {result.pdfs.map((p) => (
+              <li key={p.url} className="flex items-start gap-3 p-3">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+                  checked={selected.has(p.url)}
+                  onChange={() => toggle(p.url)}
+                  disabled={disabled}
+                  aria-label={`Select ${p.title}`}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{p.title}</div>
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-[11px] text-muted-foreground hover:underline"
+                  >
+                    {p.url}
+                  </a>
+                </div>
+                {downloading === p.url && (
+                  <Loader2 className="mt-1 h-4 w-4 animate-spin text-primary" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
